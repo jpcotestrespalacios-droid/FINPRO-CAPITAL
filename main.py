@@ -7,7 +7,10 @@ from routers import facturas, cesion, autenticacion, consultas
 from config import settings
 from database import engine, Base
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Warning: Could not create tables: {e}")
 
 app = FastAPI(title="RADIAN API", version="1.0.0", docs_url=None, redoc_url=None)
 
