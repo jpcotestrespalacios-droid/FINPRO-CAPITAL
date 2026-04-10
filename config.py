@@ -15,9 +15,13 @@ class Settings(BaseSettings):
     # CORS — lista de orígenes permitidos (separados por coma en .env)
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
-    # Base de datos
-    DATABASE_URL: str = "sqlite:///./radian.db"  # Cambiar a PostgreSQL en producción
-    # DATABASE_URL: str = "postgresql://user:password@localhost/radian_db"
+    # Base de datos (Supabase PostgreSQL)
+    DATABASE_URL: str = "sqlite:///./radian.db"  # Solo para desarrollo local
+
+    # Supabase
+    SUPABASE_URL: str = "https://ucacmeyfybjdntieudsm.supabase.co"
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_KEY: str = ""  # Nunca exponer — solo en variables de entorno
 
     # DIAN - Ambiente de Pruebas (Habilitación)
     DIAN_AMBIENTE: str = "2"  # 1=Producción, 2=Pruebas

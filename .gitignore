@@ -5,7 +5,8 @@ env/
 
 # Variables de entorno (NUNCA subir credenciales)
 .env
-.env.*
+.env.local
+.env.production
 
 # Python cache
 __pycache__/
@@ -25,3 +26,5 @@ certs/
 # IDE
 .vscode/
 .idea/
+
+.vercel
