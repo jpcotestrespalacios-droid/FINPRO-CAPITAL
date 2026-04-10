@@ -465,13 +465,13 @@ async function probar(){
 </body>
 </html>"""
 
-@app.get("/docs", include_in_schema=False)
+@app.get("/", include_in_schema=False)
 async def ui():
     return HTMLResponse(UI)
 
-@app.get("/", tags=["Health"])
+@app.get("/health", tags=["Health"])
 async def root():
-    return {"sistema":"RADIAN API","version":"1.0.0","estado":"activo","docs":"http://localhost:8000/docs"}
+    return {"sistema":"RADIAN API","version":"1.0.0","estado":"activo"}
 
 @app.get("/health", tags=["Health"])
 async def health():
