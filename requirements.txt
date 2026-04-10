@@ -1,0 +1,12 @@
+fastapi>=0.135.0
+uvicorn>=0.44.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
+cryptography>=40.0.0
+lxml>=5.0.0
+signxml>=3.0.0
+zeep>=4.2.0
