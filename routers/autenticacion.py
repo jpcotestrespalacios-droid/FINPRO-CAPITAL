@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+from typing import Optional
 
-from database import get_db, Usuario
+from supabase_db import get_sb
 from config import settings
 
 router = APIRouter()
@@ -29,8 +29,7 @@ def crear_token(data: dict) -> str:
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Usuario:
-    """Dependencia reutilizable: verifica JWT y retorna el usuario autenticado."""
+def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
     credentials_exception = HTTPException(
         status_code=401,
         detail="Token inválido o expirado",
@@ -44,16 +43,17 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
 
-    usuario = db.query(Usuario).filter(Usuario.email == email, Usuario.activo == True).first()
-    if usuario is None:
+    result = get_sb().table("usuarios").select("*").eq("email", email).eq("activo", True).execute()
+    if not result.data:
         raise credentials_exception
-    return usuario
+    return result.data[0]
 
 
 class UsuarioCreate(BaseModel):
     email: str
     nombre: str
     nit: str
+    telefono: Optional[str] = None
     password: str
 
 
@@ -63,24 +63,41 @@ class Token(BaseModel):
 
 
 @router.post("/registro", summary="Registrar nueva empresa")
-async def registrar(usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    if db.query(Usuario).filter(Usuario.email == usuario.email).first():
+async def registrar(usuario: UsuarioCreate):
+    sb = get_sb()
+    existing = sb.table("usuarios").select("id").eq("email", usuario.email).execute()
+    if existing.data:
         raise HTTPException(status_code=400, detail="Email ya registrado")
-    nuevo = Usuario(
-        email=usuario.email,
-        nombre=usuario.nombre,
-        nit=usuario.nit,
-        hashed_password=hash_password(usuario.password)
-    )
-    db.add(nuevo)
-    db.commit()
+    sb.table("usuarios").insert({
+        "email": usuario.email,
+        "nombre": usuario.nombre,
+        "nit": usuario.nit,
+        "telefono": usuario.telefono,
+        "hashed_password": hash_password(usuario.password),
+        "activo": True,
+    }).execute()
     return {"mensaje": "Usuario registrado exitosamente", "email": usuario.email}
 
 
 @router.post("/token", response_model=Token, summary="Obtener token JWT")
-async def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.email == form.username).first()
-    if not usuario or not verify_password(form.password, usuario.hashed_password):
+async def login(form: OAuth2PasswordRequestForm = Depends()):
+    sb = get_sb()
+    result = sb.table("usuarios").select("*").eq("email", form.username).execute()
+    if not result.data:
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-    token = crear_token({"sub": usuario.email, "nit": usuario.nit})
+    usuario = result.data[0]
+    if not verify_password(form.password, usuario["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    token = crear_token({"sub": usuario["email"], "nit": usuario["nit"]})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/me", summary="Datos del usuario actual")
+async def me(current_user: dict = Depends(get_current_user)):
+    return {
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "nombre": current_user["nombre"],
+        "nit": current_user["nit"],
+        "telefono": current_user.get("telefono"),
+    }

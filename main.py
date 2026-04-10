@@ -5,12 +5,6 @@ import uvicorn
 
 from routers import facturas, cesion, autenticacion, consultas
 from config import settings
-from database import engine, Base
-
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    print(f"Warning: Could not create tables: {e}")
 
 app = FastAPI(title="RADIAN API", version="1.0.0", docs_url=None, redoc_url=None)
 
@@ -204,7 +198,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="lf"><label>Nombre empresa</label><input id="r-nombre" placeholder="MI EMPRESA SAS" /></div>
         <div class="lf"><label>NIT</label><input id="r-nit" placeholder="900.123.456-1" /></div>
       </div>
-      <div class="lf"><label>Correo electrónico</label><input id="r-email" type="email" placeholder="empresa@correo.com" /></div>
+      <div class="form-row">
+        <div class="lf"><label>Correo electrónico</label><input id="r-email" type="email" placeholder="empresa@correo.com" /></div>
+        <div class="lf"><label>Teléfono de contacto</label><input id="r-tel" type="tel" placeholder="+57 300 000 0000" /></div>
+      </div>
       <div class="lf"><label>Contraseña</label><input id="r-pass" type="password" placeholder="••••••••" /></div>
       <button class="login-btn" onclick="doRegister()" id="reg-btn">Crear cuenta</button>
       <div class="login-toggle">¿Ya tienes cuenta? <a onclick="showPanel('login')">Iniciar sesión</a></div>
@@ -474,13 +471,14 @@ async function doRegister() {
   const nombre=document.getElementById('r-nombre').value.trim();
   const nit=document.getElementById('r-nit').value.trim();
   const email=document.getElementById('r-email').value.trim();
+  const tel=document.getElementById('r-tel').value.trim();
   const pass=document.getElementById('r-pass').value;
   const errEl=document.getElementById('reg-err');
   const btn=document.getElementById('reg-btn');
-  if(!nombre||!nit||!email||!pass){showErr(errEl,'Completa todos los campos');return;}
+  if(!nombre||!nit||!email||!pass){showErr(errEl,'Completa los campos obligatorios');return;}
   btn.textContent='Creando cuenta...';btn.disabled=true;
   try {
-    const r=await fetch(API+'/api/v1/auth/registro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,nombre,nit,password:pass})});
+    const r=await fetch(API+'/api/v1/auth/registro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,nombre,nit,telefono:tel||null,password:pass})});
     const d=await r.json();
     if(!r.ok){showErr(errEl,d.detail||'Error al registrar');return;}
     toast('Cuenta creada. Ahora inicia sesión.','ok');
