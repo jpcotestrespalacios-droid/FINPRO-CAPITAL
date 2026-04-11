@@ -2098,8 +2098,728 @@ function toast(msg, type){
 </body>
 </html>"""
 
+LANDING = r"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FinPro Capital — Cesión de Facturas Electrónicas RADIAN</title>
+<meta name="description" content="Plataforma colombiana para ceder facturas electrónicas ante la DIAN usando RADIAN. Contabilidad automática PUC, reportes Excel y API REST."/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#1A4FD6;--brand-dark:#1340B0;--brand-light:#EEF3FF;--brand-glow:rgba(26,79,214,.12);
+  --teal:#0891B2;--green:#059669;--gold:#D97706;--red:#DC2626;--purple:#7C3AED;
+  --bg:#F4F6FA;--surface:#fff;--border:#E4E9F0;--text:#0D1B2E;--text2:#5A6A7E;--text3:#9DAEC0;
+  --sidebar:#0B1829;--radius:10px;--radius-lg:14px;--radius-xl:20px;
+  --shadow:0 1px 3px rgba(13,27,46,.06),0 4px 16px rgba(13,27,46,.04);
+  --shadow-md:0 4px 24px rgba(13,27,46,.1),0 1px 4px rgba(13,27,46,.06);
+  --shadow-lg:0 16px 48px rgba(13,27,46,.15),0 2px 8px rgba(13,27,46,.08);
+  --font:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:#fff;color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ── NAVBAR ── */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;height:64px;display:flex;align-items:center;padding:0 5%;border-bottom:1px solid transparent;transition:.3s}
+.navbar.scrolled{background:rgba(255,255,255,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-color:var(--border);box-shadow:0 1px 12px rgba(13,27,46,.06)}
+.nav-logo{font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.5px;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-logo em{font-style:normal;color:var(--brand)}
+.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--brand),var(--teal));border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nav-links{display:flex;align-items:center;gap:6px;margin:0 auto;list-style:none}
+.nav-links a{font-size:14px;font-weight:500;color:var(--text2);text-decoration:none;padding:7px 14px;border-radius:8px;transition:.15s}
+.nav-links a:hover{color:var(--brand);background:var(--brand-light)}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:.18s;text-decoration:none;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-dark);box-shadow:0 4px 16px rgba(26,79,214,.3)}
+.btn-lg{padding:14px 28px;font-size:15px;border-radius:var(--radius-lg)}
+.btn-outline-white{background:transparent;border:2px solid rgba(255,255,255,.4);color:#fff}
+.btn-outline-white:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.7)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:transparent}
+.hamburger span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:.25s}
+@media(max-width:768px){
+  .nav-links,.nav-actions .btn-ghost{display:none}
+  .hamburger{display:flex}
+  .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:#fff;border-bottom:1px solid var(--border);padding:20px 5%;box-shadow:var(--shadow-md)}
+  .mobile-menu.open{display:block}
+  .mobile-menu a{display:block;padding:12px 0;font-size:15px;font-weight:500;color:var(--text2);text-decoration:none;border-bottom:1px solid var(--border)}
+  .mobile-menu a:last-child{border:none}
+}
+
+/* ── HERO ── */
+.hero{min-height:100vh;background:linear-gradient(145deg,#050E1F 0%,#0A1E45 45%,#0F2E6E 75%,#1A4FD6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 5% 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.025'%3E%3Cpath d='M40 40m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0'/%3E%3C/g%3E%3C/svg%3E")}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:6px 16px;font-size:12px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:28px;letter-spacing:.5px}
+.hero-badge span{width:6px;height:6px;background:#34D399;border-radius:50%;animation:pulse-green 2s infinite}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.4)}50%{box-shadow:0 0 0 6px rgba(52,211,153,0)}}
+.hero h1{font-size:clamp(32px,5vw,64px);font-weight:900;color:#fff;line-height:1.1;letter-spacing:-2px;max-width:820px;margin-bottom:24px}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,#5EAEFF,#34D399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:rgba(255,255,255,.65);max-width:620px;line-height:1.65;margin-bottom:40px;font-weight:400}
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:48px}
+.hero-trust{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.5px}
+.hero-trust svg{width:14px;opacity:.4}
+.hero-trust-dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.25)}
+/* Floating cards in hero */
+.hero-floats{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.float-card{position:absolute;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-size:12px;color:rgba(255,255,255,.7);font-weight:500;animation:float 6s ease-in-out infinite}
+.float-card:nth-child(1){top:20%;right:6%;animation-delay:0s}
+.float-card:nth-child(2){top:55%;right:3%;animation-delay:2s}
+.float-card:nth-child(3){top:30%;left:3%;animation-delay:4s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@media(max-width:768px){.float-card{display:none}}
+
+/* ── STATS BAR ── */
+.stats-bar{background:#fff;border-bottom:1px solid var(--border);padding:40px 5%}
+.stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.stat-item{text-align:center;padding:0 30px;position:relative}
+.stat-item+.stat-item::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:1px;background:var(--border)}
+.stat-num{font-size:clamp(36px,4vw,54px);font-weight:900;color:var(--text);letter-spacing:-2px;line-height:1}
+.stat-num span{color:var(--brand)}
+.stat-label{font-size:14px;color:var(--text2);margin-top:8px;font-weight:500}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:4px}
+@media(max-width:600px){.stats-inner{grid-template-columns:1fr}.stat-item+.stat-item::before{display:none}.stat-item{padding:20px 0;border-top:1px solid var(--border)}}
+
+/* ── SECTIONS COMMON ── */
+section{padding:80px 5%}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-tag{display:inline-block;background:var(--brand-light);color:var(--brand);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;padding:5px 14px;border-radius:99px;margin-bottom:16px}
+.section-title{font-size:clamp(26px,3.5vw,40px);font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1.2;margin-bottom:14px}
+.section-sub{font-size:16px;color:var(--text2);max-width:600px;line-height:1.65}
+
+/* ── FEATURES ── */
+.features-bg{background:var(--bg)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.feat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;transition:.2s;position:relative;overflow:hidden}
+.feat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 2px 2px;opacity:0;transition:.2s}
+.feat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-3px)}
+.feat-card:hover::after{opacity:1}
+.feat-card:nth-child(1)::after{background:linear-gradient(90deg,var(--brand),var(--teal))}
+.feat-card:nth-child(2)::after{background:linear-gradient(90deg,var(--teal),var(--green))}
+.feat-card:nth-child(3)::after{background:linear-gradient(90deg,var(--green),#34D399)}
+.feat-card:nth-child(4)::after{background:linear-gradient(90deg,var(--gold),#FCD34D)}
+.feat-card:nth-child(5)::after{background:linear-gradient(90deg,var(--purple),#A78BFA)}
+.feat-card:nth-child(6)::after{background:linear-gradient(90deg,var(--red),#F87171)}
+.feat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.feat-icon svg{width:22px;height:22px}
+.fi-blue{background:var(--brand-light);color:var(--brand)}
+.fi-teal{background:#F0FDFF;color:var(--teal)}
+.fi-green{background:#ECFDF5;color:var(--green)}
+.fi-gold{background:#FFFBEB;color:var(--gold)}
+.fi-purple{background:#F5F3FF;color:var(--purple)}
+.fi-red{background:#FEF2F2;color:var(--red)}
+.feat-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
+.feat-desc{font-size:13px;color:var(--text2);line-height:1.65}
+@media(max-width:900px){.features-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:580px){.features-grid{grid-template-columns:1fr}}
+
+/* ── HOW IT WORKS ── */
+.how-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;margin-top:48px}
+.steps-list{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:20px;padding:24px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;border-radius:8px}
+.step-item:last-child{border-bottom:none}
+.step-item.active .step-circle{background:var(--brand);border-color:var(--brand);color:#fff}
+.step-item.active .step-title{color:var(--brand)}
+.step-circle{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--text3);flex-shrink:0;transition:.2s;margin-top:2px}
+.step-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;transition:.2s}
+.step-desc{font-size:13px;color:var(--text2);line-height:1.6}
+.step-visual{background:linear-gradient(145deg,var(--sidebar),#0F2554);border-radius:var(--radius-xl);padding:32px;min-height:360px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.step-visual::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.03'%3E%3Ccircle cx='20' cy='20' r='1'/%3E%3C/g%3E%3C/svg%3E")}
+.visual-panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:18px;margin-bottom:12px;position:relative;z-index:1}
+.visual-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:10px}
+.visual-field{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.6);font-family:monospace;margin-bottom:8px;word-break:break-all}
+.visual-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;color:#34D399}
+.visual-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#34D399}
+@media(max-width:860px){.how-inner{grid-template-columns:1fr;gap:40px}}
+
+/* ── PRICING ── */
+.pricing-bg{background:linear-gradient(180deg,#fff 0%,var(--bg) 100%)}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.price-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-xl);padding:32px;position:relative;transition:.2s}
+.price-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
+.price-card.featured{border-color:var(--brand);background:linear-gradient(145deg,#FAFCFF,#EEF3FF)}
+.price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,var(--brand),var(--teal));color:#fff;font-size:11px;font-weight:800;padding:4px 16px;border-radius:99px;letter-spacing:.5px;white-space:nowrap}
+.price-tier{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-bottom:14px}
+.price-amount{font-size:42px;font-weight:900;color:var(--text);letter-spacing:-2px;line-height:1}
+.price-amount sup{font-size:18px;font-weight:700;letter-spacing:0;vertical-align:super}
+.price-amount sub{font-size:13px;font-weight:500;color:var(--text2);letter-spacing:0;vertical-align:baseline;margin-left:2px}
+.price-desc{font-size:13px;color:var(--text2);margin:12px 0 24px;line-height:1.5;min-height:40px}
+.price-divider{height:1px;background:var(--border);margin-bottom:22px}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.price-features li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2)}
+.price-features li::before{content:'✓';color:var(--green);font-weight:800;flex-shrink:0;font-size:12px;margin-top:1px}
+.price-features li.no::before{content:'✕';color:var(--text3)}
+.price-features li.no{color:var(--text3)}
+.price-cta{width:100%;padding:13px;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:.18s;text-align:center;display:block;text-decoration:none}
+.cta-outlined{background:transparent;border:1.5px solid var(--border);color:var(--text2)}
+.cta-outlined:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-light)}
+.cta-brand{background:var(--brand);color:#fff;border:none}
+.cta-brand:hover{background:var(--brand-dark);box-shadow:0 4px 16px rgba(26,79,214,.3)}
+.cta-dark{background:var(--sidebar);color:#fff;border:none}
+.cta-dark:hover{background:#0D2040}
+@media(max-width:860px){.pricing-grid{grid-template-columns:1fr}}
+
+/* ── FAQ ── */
+.faq-list{margin-top:48px;max-width:780px;margin-left:auto;margin-right:auto;display:flex;flex-direction:column;gap:12px}
+.faq-item{border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:.15s}
+.faq-item.open{border-color:var(--brand);box-shadow:0 0 0 4px rgba(26,79,214,.06)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;cursor:pointer;user-select:none}
+.faq-q-text{font-size:15px;font-weight:600;color:var(--text)}
+.faq-icon{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.25s;color:var(--text2)}
+.faq-item.open .faq-icon{background:var(--brand);border-color:var(--brand);color:#fff;transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .2s}
+.faq-a-inner{padding:0 24px 20px;font-size:14px;color:var(--text2);line-height:1.7}
+.faq-item.open .faq-a{max-height:400px}
+
+/* ── CTA BAND ── */
+.cta-band{background:linear-gradient(135deg,#071120 0%,#0F2554 50%,#1A4FD6 100%);padding:80px 5%;text-align:center;position:relative;overflow:hidden}
+.cta-band::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/svg%3E")}
+.cta-band h2{font-size:clamp(26px,3.5vw,42px);font-weight:900;color:#fff;letter-spacing:-1px;max-width:640px;margin:0 auto 16px;position:relative}
+.cta-band p{font-size:16px;color:rgba(255,255,255,.6);max-width:500px;margin:0 auto 36px;position:relative}
+.cta-band-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative}
+.btn-white{background:#fff;color:var(--brand);border:none;font-weight:700}
+.btn-white:hover{background:var(--brand-light);box-shadow:0 4px 20px rgba(255,255,255,.2)}
+
+/* ── FOOTER ── */
+footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)}
+.footer-inner{max-width:1100px;margin:0 auto}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px}
+.footer-brand{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.5px;margin-bottom:12px}
+.footer-brand em{font-style:normal;color:#5EAEFF}
+.footer-tagline{font-size:13px;line-height:1.6;max-width:260px;margin-bottom:20px}
+.footer-social{display:flex;gap:10px}
+.social-btn{width:34px;height:34px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.15s;text-decoration:none;color:rgba(255,255,255,.5)}
+.social-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+.footer-col h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.3);margin-bottom:14px}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-col ul li a{font-size:13px;color:rgba(255,255,255,.4);text-decoration:none;transition:.15s}
+.footer-col ul li a:hover{color:#fff}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-legal{font-size:12px}
+.footer-badges{display:flex;gap:8px}
+.f-badge{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.35)}
+@media(max-width:860px){.footer-top{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.footer-top{grid-template-columns:1fr}}
+
+/* ── MODAL DEMO ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:20px}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:var(--radius-xl);width:100%;max-width:680px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.3)}
+.modal-header{background:var(--sidebar);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.modal-header-title{font-size:15px;font-weight:700;color:#fff}
+.modal-x{width:30px;height:30px;background:rgba(255,255,255,.08);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:18px;transition:.15s}
+.modal-x:hover{background:rgba(255,255,255,.15);color:#fff}
+.modal-video{aspect-ratio:16/9;background:linear-gradient(135deg,#0A1E45,#1A4FD6);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;cursor:pointer;position:relative;overflow:hidden}
+.play-btn{width:72px;height:72px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:.2s}
+.play-btn:hover{background:rgba(255,255,255,.25);transform:scale(1.08)}
+.play-btn svg{width:28px;height:28px;color:#fff;margin-left:4px}
+.modal-video-text{font-size:14px;color:rgba(255,255,255,.6);font-weight:500}
+.modal-video-badge{position:absolute;top:16px;right:16px;background:rgba(220,38,38,.9);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;letter-spacing:.3px}
+.modal-body{padding:24px}
+.demo-steps{display:flex;gap:12px;flex-wrap:wrap}
+.demo-step{flex:1;min-width:140px;background:var(--bg);border-radius:var(--radius);padding:14px;text-align:center}
+.demo-step-num{font-size:20px;font-weight:900;color:var(--brand);margin-bottom:4px}
+.demo-step-label{font-size:12px;color:var(--text2);font-weight:500;line-height:1.4}
+
+/* ── SCROLL ANIMATIONS ── */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+.reveal-delay-5{transition-delay:.5s}
+</style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar" id="navbar">
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" style="width:16px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    FINPRO<em>CAPITAL</em>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#caracteristicas">Características</a></li>
+    <li><a href="#como-funciona">Cómo funciona</a></li>
+    <li><a href="#precios">Precios</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="/openapi.json" target="_blank">API Docs</a></li>
+  </ul>
+  <div class="nav-actions">
+    <a href="/app" class="btn btn-ghost" style="font-size:13px">Iniciar sesión</a>
+    <a href="/app" class="btn btn-primary" style="font-size:13px">Crear cuenta gratis</a>
+  </div>
+  <button class="hamburger" onclick="toggleMenu()" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#caracteristicas" onclick="closeMenu()">Características</a>
+  <a href="#como-funciona" onclick="closeMenu()">Cómo funciona</a>
+  <a href="#precios" onclick="closeMenu()">Precios</a>
+  <a href="#faq" onclick="closeMenu()">FAQ</a>
+  <a href="/openapi.json" target="_blank">API Docs</a>
+  <a href="/app" style="color:var(--brand);font-weight:700">Iniciar sesión →</a>
+</div>
+
+<!-- ══ HERO ══ -->
+<section class="hero" id="hero">
+  <div class="hero-floats">
+    <div class="float-card">
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Cesión aceptada</div>
+      <div style="font-size:13px;font-weight:700;color:#34D399">✓ RADIAN • Evento 037</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">$120.000.000 COP</div>
+    </div>
+    <div class="float-card">
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">PUC generado</div>
+      <div style="font-size:12px;font-weight:700;color:#5EAEFF">1305 · Deudores</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">4135 · Ingresos</div>
+    </div>
+    <div class="float-card">
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Reporte Excel</div>
+      <div style="font-size:12px;font-weight:700;color:#FBBF24">📊 libro_diario.xlsx</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">Descargado</div>
+    </div>
+  </div>
+  <div class="hero-badge">
+    <span></span>
+    Integrado con DIAN &nbsp;·&nbsp; RADIAN &nbsp;·&nbsp; Facturación Electrónica
+  </div>
+  <h1>Cede tus facturas<br>electrónicas ante la <em>DIAN</em><br>en minutos</h1>
+  <p class="hero-sub">La única plataforma que automatiza el proceso RADIAN completo: registro, habilitación como título valor y cesión de crédito, con contabilidad automática PUC incluida.</p>
+  <div class="hero-ctas">
+    <a href="/app" class="btn btn-primary btn-lg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Crear cuenta gratis
+    </a>
+    <button class="btn btn-outline-white btn-lg" onclick="openDemo()">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px"><path d="M5 3l14 9-14 9V3z"/></svg>
+      Ver demo
+    </button>
+  </div>
+  <div class="hero-trust">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+    Seguro &nbsp;<div class="hero-trust-dot"></div>&nbsp; HTTPS &nbsp;<div class="hero-trust-dot"></div>&nbsp; JWT httpOnly &nbsp;<div class="hero-trust-dot"></div>&nbsp; Datos en Colombia
+  </div>
+</section>
+
+<!-- ══ STATS BAR ══ -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-num"><span>+12.400</span></div>
+      <div class="stat-label">Facturas procesadas</div>
+      <div class="stat-sub">Registradas y cedidas en RADIAN</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-2">
+      <div class="stat-num"><span>340</span></div>
+      <div class="stat-label">Empresas activas</div>
+      <div class="stat-sub">PyMEs y grandes empresas</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-4">
+      <div class="stat-num"><span>&lt;2s</span></div>
+      <div class="stat-label">Tiempo de cesión</div>
+      <div class="stat-sub">Respuesta DIAN en tiempo real</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CARACTERÍSTICAS ══ -->
+<section class="features-bg" id="caracteristicas">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="section-tag reveal">Plataforma completa</div>
+      <h2 class="section-title reveal">Todo lo que necesitas<br>para ceder facturas</h2>
+      <p class="section-sub reveal" style="margin:0 auto">Desde el registro del CUFE hasta los asientos contables automáticos — sin salir de la plataforma.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon fi-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <div class="feat-title">Registro de facturas con CUFE</div>
+        <div class="feat-desc">Ingresa facturas electrónicas con su Código Único de Factura Electrónica emitido por la DIAN. Validación automática de 96 caracteres hexadecimales.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-icon fi-teal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        </div>
+        <div class="feat-title">Habilitación como título valor</div>
+        <div class="feat-desc">Convierte facturas electrónicas en títulos valores endosables con un clic. Cumple el proceso requerido por la DIAN antes de la cesión.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon fi-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <div class="feat-title">Cesión RADIAN — Evento 037</div>
+        <div class="feat-desc">Genera, firma digitalmente y envía el XML UBL 2.1 con SHA-384 al sistema RADIAN de la DIAN. Respuesta en menos de 2 segundos.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-3">
+        <div class="feat-icon fi-gold">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div class="feat-title">Contabilidad automática PUC</div>
+        <div class="feat-desc">Cada cesión genera asientos contables automáticamente con cuentas PUC colombianas (1305 Deudores · 4135 Ingresos). Libro diario en tiempo real.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-4">
+        <div class="feat-icon fi-purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div class="feat-title">Reportes Excel profesionales</div>
+        <div class="feat-desc">Descarga libro diario, análisis de cartera, estado de resultados, flujo de caja y reporte consolidado con formato contable y gráficas incluidas.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-5">
+        <div class="feat-icon fi-red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="feat-title">API REST + Explorer integrado</div>
+        <div class="feat-desc">Integra RADIAN directamente en tu ERP con nuestra API REST documentada. Incluye explorador interactivo y schema OpenAPI/JSON.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CÓMO FUNCIONA ══ -->
+<section id="como-funciona">
+  <div class="section-inner">
+    <div class="section-tag reveal">Proceso simplificado</div>
+    <h2 class="section-title reveal">3 pasos para ceder<br>una factura electrónica</h2>
+    <p class="section-sub reveal">Lo que antes tomaba días de trámites, ahora lo haces en minutos desde tu navegador.</p>
+    <div class="how-inner">
+      <div class="steps-list">
+        <div class="step-item active reveal" onclick="setStep(0)">
+          <div class="step-circle">1</div>
+          <div>
+            <div class="step-title">Registra tu factura con el CUFE</div>
+            <div class="step-desc">Ingresa los datos de tu factura electrónica: CUFE, número, emisor, adquiriente y valores. La plataforma valida automáticamente el formato DIAN.</div>
+          </div>
+        </div>
+        <div class="step-item reveal reveal-delay-1" onclick="setStep(1)">
+          <div class="step-circle">2</div>
+          <div>
+            <div class="step-title">Habilítala como título valor</div>
+            <div class="step-desc">Con un clic conviertes la factura en un título valor endosable. La plataforma actualiza el estado en Supabase y queda lista para ceder.</div>
+          </div>
+        </div>
+        <div class="step-item reveal reveal-delay-2" onclick="setStep(2)">
+          <div class="step-circle">3</div>
+          <div>
+            <div class="step-title">Cede el crédito ante la DIAN</div>
+            <div class="step-desc">Ingresa el NIT y nombre del cesionario, el valor a ceder. La plataforma construye el XML UBL 2.1, lo firma con SHA-384 y lo envía a RADIAN. Contabilidad generada automáticamente.</div>
+          </div>
+        </div>
+      </div>
+      <div class="step-visual" id="step-visual">
+        <div class="visual-panel" id="sv-0">
+          <div class="visual-label">Registrar Factura</div>
+          <div class="visual-field">CUFE: a1b2c3d4e5f6...96chars</div>
+          <div class="visual-field">FV-00001 · EMPRESA SAS</div>
+          <div class="visual-field">$120.000.000 COP · 2026-05-30</div>
+          <div class="visual-badge">Factura registrada · EMITIDA</div>
+        </div>
+        <div class="visual-panel" id="sv-1" style="display:none">
+          <div class="visual-label">Habilitar como título valor</div>
+          <div class="visual-field">es_titulo_valor: true</div>
+          <div class="visual-field">Estado: VALIDADA_DIAN</div>
+          <div class="visual-badge">Lista para ceder · ✓</div>
+        </div>
+        <div class="visual-panel" id="sv-2" style="display:none">
+          <div class="visual-label">Cesión RADIAN — Evento 037</div>
+          <div class="visual-field">CUDE: sha384_hash...</div>
+          <div class="visual-field">Cesionario: BANCO SAS · NIT 900.x</div>
+          <div class="visual-field">PUC 1305 Dr $120M · 4135 Cr $120M</div>
+          <div class="visual-badge">Aceptado por DIAN · &lt;2s</div>
+        </div>
+        <div style="position:relative;z-index:1;margin-top:12px;display:flex;gap:8px">
+          <div onclick="setStep(0)" style="flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.15);cursor:pointer" id="dot-0"><div style="height:100%;border-radius:99px;background:var(--teal);width:100%"></div></div>
+          <div onclick="setStep(1)" style="flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.15);cursor:pointer" id="dot-1"></div>
+          <div onclick="setStep(2)" style="flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.15);cursor:pointer" id="dot-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PRICING ══ -->
+<section class="pricing-bg" id="precios">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="section-tag reveal">Precios transparentes</div>
+      <h2 class="section-title reveal">Planes para cada empresa</h2>
+      <p class="section-sub reveal" style="margin:0 auto">Sin contratos anuales. Cancela cuando quieras. Factura en pesos colombianos.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card reveal">
+        <div class="price-tier">Starter</div>
+        <div class="price-amount">Gratis<sub style="font-size:14px;color:var(--text2)"> siempre</sub></div>
+        <div class="price-desc">Ideal para probar la plataforma y proyectos pequeños con pocas facturas al mes.</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Hasta 10 facturas / mes</li>
+          <li>1 usuario</li>
+          <li>Cesiones RADIAN ilimitadas</li>
+          <li>Contabilidad automática PUC</li>
+          <li>API REST acceso completo</li>
+          <li class="no">Reportes Excel</li>
+          <li class="no">Soporte prioritario</li>
+          <li class="no">Integración ERP</li>
+        </ul>
+        <a href="/app" class="price-cta cta-outlined">Comenzar gratis</a>
+      </div>
+      <div class="price-card featured reveal reveal-delay-2">
+        <div class="price-badge">MÁS POPULAR</div>
+        <div class="price-tier" style="color:var(--brand)">Pro</div>
+        <div class="price-amount"><sup>$</sup>99.000<sub>/mes</sub></div>
+        <div class="price-desc">Para empresas que cedan facturas regularmente y necesitan reportes y soporte dedicado.</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Facturas ilimitadas</li>
+          <li>Hasta 5 usuarios</li>
+          <li>Cesiones RADIAN ilimitadas</li>
+          <li>Contabilidad automática PUC</li>
+          <li>API REST acceso completo</li>
+          <li>Reportes Excel profesionales</li>
+          <li>Soporte prioritario (chat)</li>
+          <li class="no">Integración ERP personalizada</li>
+        </ul>
+        <a href="/app" class="price-cta cta-brand">Empezar con Pro</a>
+      </div>
+      <div class="price-card reveal reveal-delay-4">
+        <div class="price-tier">Enterprise</div>
+        <div class="price-amount" style="font-size:32px">Precio<br>personalizado</div>
+        <div class="price-desc">Para grupos empresariales, fondos de inversión y entidades financieras con alto volumen.</div>
+        <div class="price-divider"></div>
+        <ul class="price-features">
+          <li>Volumen ilimitado</li>
+          <li>Usuarios ilimitados</li>
+          <li>SLA 99.9% uptime</li>
+          <li>Integración ERP personalizada</li>
+          <li>Reportes a medida</li>
+          <li>Onboarding dedicado</li>
+          <li>Soporte 24/7 vía canal directo</li>
+          <li>Factura electrónica incluida</li>
+        </ul>
+        <a href="mailto:ventas@finprocapital.co" class="price-cta cta-dark">Contactar ventas</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FAQ ══ -->
+<section id="faq">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="section-tag reveal">Preguntas frecuentes</div>
+      <h2 class="section-title reveal">Todo lo que necesitas saber<br>sobre RADIAN y cesión</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item reveal" onclick="toggleFaq(this)">
+        <div class="faq-q">
+          <span class="faq-q-text">¿Qué es RADIAN y para qué sirve?</span>
+          <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">RADIAN (Registro de Facturas Electrónicas de Venta como Título Valor) es el sistema de la DIAN que permite registrar facturas electrónicas como títulos valores y cederlas (endosarlas) a terceros — por ejemplo, a un banco o fondo de inversión para obtener liquidez anticipada. FinPro Capital automatiza todo el proceso técnico de integración con RADIAN mediante el Evento 037.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-1" onclick="toggleFaq(this)">
+        <div class="faq-q">
+          <span class="faq-q-text">¿Qué es el CUFE y dónde lo encuentro?</span>
+          <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">El CUFE (Código Único de Factura Electrónica) es el identificador único de 96 caracteres hexadecimales que la DIAN asigna a cada factura electrónica válida. Lo encuentras en el archivo XML de tu factura electrónica (campo &lt;cbc:UUID&gt;) o en el PDF que te entregó el proveedor de software de facturación. Sin CUFE no es posible registrar ni ceder la factura en RADIAN.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-2" onclick="toggleFaq(this)">
+        <div class="faq-q">
+          <span class="faq-q-text">¿Necesito un certificado digital para ceder facturas?</span>
+          <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">Sí. Para enviar eventos firmados a RADIAN se requiere un certificado digital emitido por una entidad de certificación autorizada por la DIAN, como Certicámara o Andes SCD. La plataforma realiza la firma XML con SHA-384 usando el certificado que configures. En el ambiente de habilitación (pruebas) puedes usar un certificado de prueba provisto por la DIAN.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-3" onclick="toggleFaq(this)">
+        <div class="faq-q">
+          <span class="faq-q-text">¿Qué pasa con la contabilidad después de una cesión?</span>
+          <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">FinPro Capital genera automáticamente los asientos contables correspondientes usando el PUC colombiano: débito a la cuenta 1305 (Deudores Comerciales — Clientes Nacionales) y crédito a la cuenta 4135 (Ingresos Financieros — Cesión de Cartera). Puedes descargar el Libro Diario, el Estado de Resultados, el análisis de cartera y el Flujo de Caja proyectado en Excel con formato contable profesional.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-4" onclick="toggleFaq(this)">
+        <div class="faq-q">
+          <span class="faq-q-text">¿Mis datos están seguros? ¿Dónde se almacenan?</span>
+          <div class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">La plataforma usa autenticación con JWT almacenado en cookies httpOnly (no accesible por JavaScript, protegido contra XSS), protección CSRF con el patrón double-submit cookie, y rate limiting en los endpoints de autenticación. Los datos se almacenan en Supabase (PostgreSQL) con infraestructura en región sudamericana. Las comunicaciones son siempre por HTTPS.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA BAND ══ -->
+<div class="cta-band">
+  <h2 class="reveal">¿Listo para ceder tu primera factura?</h2>
+  <p class="reveal reveal-delay-1">Regístrate gratis en menos de 2 minutos. Sin tarjeta de crédito. Sin letra pequeña.</p>
+  <div class="cta-band-actions reveal reveal-delay-2">
+    <a href="/app" class="btn btn-white btn-lg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Crear cuenta gratis
+    </a>
+    <a href="mailto:demo@finprocapital.co" class="btn btn-outline-white btn-lg">Solicitar demo personalizada</a>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">FINPRO<em>CAPITAL</em></div>
+        <div class="footer-tagline">Plataforma colombiana de cesión de facturas electrónicas RADIAN. Automatizamos el proceso completo: registro, habilitación y cesión ante la DIAN.</div>
+        <div class="footer-social">
+          <a href="#" class="social-btn" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="GitHub">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+          </a>
+          <a href="mailto:contacto@finprocapital.co" class="social-btn" aria-label="Email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Producto</h4>
+        <ul>
+          <li><a href="#caracteristicas">Características</a></li>
+          <li><a href="#precios">Precios</a></li>
+          <li><a href="/openapi.json" target="_blank">API Docs</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Términos de uso</a></li>
+          <li><a href="#">Política de privacidad</a></li>
+          <li><a href="#">Tratamiento de datos</a></li>
+          <li><a href="#">Seguridad</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Soporte</h4>
+        <ul>
+          <li><a href="mailto:soporte@finprocapital.co">soporte@finprocapital.co</a></li>
+          <li><a href="mailto:ventas@finprocapital.co">ventas@finprocapital.co</a></li>
+          <li><a href="#">Centro de ayuda</a></li>
+          <li><a href="#">Estado del sistema</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-legal">© 2026 FinPro Capital SAS · NIT 900.203.321-8 · Bogotá, Colombia</div>
+      <div class="footer-badges">
+        <span class="f-badge">DIAN</span>
+        <span class="f-badge">RADIAN</span>
+        <span class="f-badge">UBL 2.1</span>
+        <span class="f-badge">SHA-384</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ══ MODAL DEMO ══ -->
+<div class="modal-overlay" id="demo-modal" onclick="if(event.target===this)closeDemo()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">Demo — FinPro Capital RADIAN</span>
+      <button class="modal-x" onclick="closeDemo()">✕</button>
+    </div>
+    <div class="modal-video">
+      <div class="modal-video-badge">PRÓXIMAMENTE</div>
+      <div class="play-btn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+      </div>
+      <div class="modal-video-text">Video demo del proceso completo de cesión</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Mientras tanto, puedes explorar la plataforma directamente o solicitar una demo en vivo con nuestro equipo.</p>
+      <div class="demo-steps">
+        <div class="demo-step"><div class="demo-step-num">1</div><div class="demo-step-label">Registra la factura con su CUFE</div></div>
+        <div class="demo-step"><div class="demo-step-num">2</div><div class="demo-step-label">Habilítala como título valor</div></div>
+        <div class="demo-step"><div class="demo-step-num">3</div><div class="demo-step-label">Cede el crédito ante la DIAN</div></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <a href="/app" class="btn btn-primary" style="flex:1;justify-content:center">Probar ahora gratis</a>
+        <a href="mailto:demo@finprocapital.co" class="btn btn-ghost" style="flex:1;justify-content:center">Solicitar demo</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── NAVBAR SCROLL ──
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 20);
+}, {passive: true});
+
+// ── MOBILE MENU ──
+function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('open'); }
+function closeMenu()  { document.getElementById('mobile-menu').classList.remove('open'); }
+
+// ── DEMO MODAL ──
+function openDemo()  { document.getElementById('demo-modal').classList.add('show'); document.body.style.overflow='hidden'; }
+function closeDemo() { document.getElementById('demo-modal').classList.remove('show'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeDemo(); });
+
+// ── HOW IT WORKS STEPS ──
+function setStep(n) {
+  document.querySelectorAll('.step-item').forEach((el,i) => el.classList.toggle('active', i===n));
+  [0,1,2].forEach(i => {
+    document.getElementById('sv-'+i).style.display = i===n ? '' : 'none';
+    const dot = document.getElementById('dot-'+i);
+    dot.innerHTML = i===n ? '<div style="height:100%;border-radius:99px;background:var(--teal);width:100%"></div>' : '';
+  });
+}
+// Auto-advance steps
+let stepIdx = 0;
+setInterval(() => { stepIdx = (stepIdx+1)%3; setStep(stepIdx); }, 3500);
+
+// ── FAQ ──
+function toggleFaq(el) {
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(f => f.classList.remove('open'));
+  if(!isOpen) el.classList.add('open');
+}
+
+// ── SCROLL REVEAL (Intersection Observer) ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, {threshold: 0.12, rootMargin: '0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── SMOOTH SCROLL FOR ANCHOR LINKS ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if(target) { e.preventDefault(); target.scrollIntoView({behavior:'smooth', block:'start'}); closeMenu(); }
+  });
+});
+</script>
+</body>
+</html>"""
+
 @app.get("/", include_in_schema=False)
-async def ui():
+async def landing():
+    return HTMLResponse(LANDING)
+
+@app.get("/app", include_in_schema=False)
+async def app_ui():
     return HTMLResponse(UI)
 
 @app.get("/health", tags=["Health"])
