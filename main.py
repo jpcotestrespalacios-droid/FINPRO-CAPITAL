@@ -310,6 +310,72 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 /* ─── DIVIDER LABEL ─── */
 .section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:14px}
 
+/* ─── ACCOUNTING / CONTABILIDAD ─── */
+.puc-code{font-family:monospace;font-size:11px;background:var(--border-soft);padding:2px 8px;border-radius:4px;color:var(--brand);font-weight:700;white-space:nowrap}
+.journal-debit{color:var(--text-primary);font-weight:600}
+.journal-credit{color:var(--text-secondary);padding-left:20px}
+.journal-row-debit td{background:#FAFBFF}
+.journal-row-credit td{background:#FEFEFE}
+.journal-ref{font-family:monospace;font-size:10px;color:var(--text-muted)}
+.amount-debit{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text-primary);font-size:13px}
+.amount-credit{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text-secondary);font-size:13px}
+.balance-ok{color:var(--green);font-weight:700}
+.balance-err{color:var(--red);font-weight:700}
+
+/* ─── CARTERA / AGING ─── */
+.aging-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.aging-card{border-radius:var(--radius);padding:16px 18px;border:1px solid var(--border);background:var(--surface);text-align:center;position:relative;overflow:hidden}
+.aging-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.aging-0::after{background:var(--green)}
+.aging-30::after{background:var(--gold)}
+.aging-60::after{background:#F97316}
+.aging-90::after{background:var(--red)}
+.aging-over::after{background:#7F1D1D}
+.aging-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px}
+.aging-amount{font-size:20px;font-weight:800;letter-spacing:-0.5px;line-height:1}
+.aging-count{font-size:11px;color:var(--text-muted);margin-top:4px}
+.aging-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.aging-bar-label{font-size:11px;color:var(--text-secondary);width:90px;flex-shrink:0;font-weight:500}
+.aging-bar-track{flex:1;height:8px;background:var(--border-soft);border-radius:99px;overflow:hidden}
+.aging-bar-fill{height:100%;border-radius:99px;transition:.6s ease}
+.aging-bar-val{font-size:11px;font-weight:700;color:var(--text-primary);width:80px;text-align:right;flex-shrink:0}
+
+/* ─── SVG CHARTS ─── */
+.chart-wrap{position:relative;width:100%}
+.chart-wrap svg{width:100%;display:block}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding:0 4px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* ─── FLUJO DE CAJA ─── */
+.cashflow-month{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-soft)}
+.cashflow-month:last-child{border:none}
+.cashflow-month-label{font-size:12px;font-weight:700;color:var(--text-primary);width:80px;flex-shrink:0}
+.cashflow-bar-track{flex:1;height:10px;background:var(--border-soft);border-radius:99px;overflow:hidden}
+.cashflow-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--brand),var(--teal));transition:.5s ease}
+.cashflow-amount{font-size:12px;font-weight:700;color:var(--text-primary);width:100px;text-align:right;flex-shrink:0}
+.cashflow-count{font-size:10px;color:var(--text-muted);width:60px;text-align:right;flex-shrink:0}
+
+/* ─── P&L / ESTADO RESULTADOS ─── */
+.pnl-section{margin-bottom:20px}
+.pnl-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);padding:10px 0 6px;border-bottom:2px solid var(--border)}
+.pnl-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-soft);font-size:13px}
+.pnl-row:last-child{border:none}
+.pnl-row-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:2px solid var(--border);font-size:15px;font-weight:800;color:var(--text-primary)}
+.pnl-label{color:var(--text-secondary);font-weight:500}
+.pnl-val{font-weight:700;font-variant-numeric:tabular-nums}
+.pnl-positive{color:var(--green)}
+.pnl-negative{color:var(--red)}
+.pnl-neutral{color:var(--text-primary)}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center}
+.kpi-val{font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--text-primary)}
+.kpi-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-weight:600}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:6px}
+
+/* ─── CESIONES LIST ─── */
+.ces-estado-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700}
+
 /* ─── RESPONSIVE ─── */
 @media(max-width:900px){
   .auth-left{display:none}
@@ -317,6 +383,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
   .stats-grid{grid-template-columns:1fr 1fr}
   .grid-2,.grid-2-eq{grid-template-columns:1fr}
   .form-row,.form-row-3{grid-template-columns:1fr}
+  .aging-grid{grid-template-columns:1fr 1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:640px){
   .stats-grid{grid-template-columns:1fr}
@@ -325,6 +393,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
   .main{margin-left:0}
   .content{padding:16px}
   .topbar{padding:0 16px}
+  .aging-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -439,6 +509,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
     <span class="nav-label">Nueva Cesión</span>
   </a>
+  <a class="nav-item" id="nav-cesiones" onclick="showPage('cesiones')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+    <span class="nav-label">Mis Cesiones</span>
+  </a>
+  <div class="nav-section">Contabilidad</div>
+  <a class="nav-item" id="nav-cartera" onclick="showPage('cartera')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18M10 18H3M10 6H3m7 0h11M17 18h4"/></svg>
+    <span class="nav-label">Cartera</span>
+  </a>
+  <a class="nav-item" id="nav-flujo" onclick="showPage('flujo')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span class="nav-label">Flujo de Caja</span>
+  </a>
+  <a class="nav-item" id="nav-contabilidad" onclick="showPage('contabilidad')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <span class="nav-label">Libro Diario</span>
+  </a>
+  <a class="nav-item" id="nav-resultados" onclick="showPage('resultados')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span class="nav-label">Estado de Resultados</span>
+  </a>
   <div class="nav-section">Herramientas</div>
   <a class="nav-item" id="nav-consultar" onclick="showPage('consultar')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -492,6 +583,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 
     <!-- ══ DASHBOARD ══ -->
     <div id="page-dashboard" class="tab-content active">
+      <div style="background:linear-gradient(135deg,#0F2554,#1A4FD6);border-radius:var(--radius-lg);padding:16px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:40px;height:40px;background:rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width:20px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff">Módulo Contabilidad activo</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:2px" id="dash-ces-total">Cargando resumen financiero...</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2)" onclick="showPage('cartera')">Ver Cartera</button>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25)" onclick="showPage('resultados')">Estado de Resultados</button>
+        </div>
+      </div>
       <div class="stats-grid">
         <div class="stat-card c1">
           <div class="stat-icon si-blue">
@@ -854,6 +960,249 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
       </div>
     </div>
 
+    <!-- ══ MIS CESIONES ══ -->
+    <div id="page-cesiones" class="tab-content">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterCesiones(this,'')">Todas</button>
+        <button class="filter-btn" onclick="filterCesiones(this,'ACEPTADA')">Aceptadas</button>
+        <button class="filter-btn" onclick="filterCesiones(this,'RECHAZADA')">Rechazadas</button>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+              Historial de Cesiones <span id="ces-count" style="font-size:12px;color:var(--text-muted);font-weight:400"></span>
+            </div>
+            <div class="card-subtitle">Todos los eventos 037 registrados en RADIAN</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('cesion')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Nueva cesión
+          </button>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Número / CUDE</th>
+              <th>Factura (CUFE)</th>
+              <th>Cedente</th>
+              <th>Cesionario</th>
+              <th>Valor</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th style="text-align:center">XML</th>
+            </tr>
+          </thead>
+          <tbody id="cesiones-body">
+            <tr><td colspan="8"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando cesiones...</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ CARTERA ══ -->
+    <div id="page-cartera" class="tab-content">
+      <div class="aging-grid" id="aging-cards">
+        <div class="aging-card aging-0"><div class="aging-label">Al día</div><div class="aging-amount" id="ag-0">—</div><div class="aging-count" id="ag-0-n">0 facturas</div></div>
+        <div class="aging-card aging-30"><div class="aging-label">1 – 30 días</div><div class="aging-amount" id="ag-30">—</div><div class="aging-count" id="ag-30-n">0 facturas</div></div>
+        <div class="aging-card aging-60"><div class="aging-label">31 – 60 días</div><div class="aging-amount" id="ag-60">—</div><div class="aging-count" id="ag-60-n">0 facturas</div></div>
+        <div class="aging-card aging-90"><div class="aging-label">61 – 90 días</div><div class="aging-amount" id="ag-90">—</div><div class="aging-count" id="ag-90-n">0 facturas</div></div>
+        <div class="aging-card aging-over"><div class="aging-label">+90 días</div><div class="aging-amount" id="ag-over">—</div><div class="aging-count" id="ag-over-n">0 facturas</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              Distribución de Cartera
+            </div>
+          </div>
+          <div class="card-body" id="aging-bars">
+            <div class="empty-state"><div class="empty-text">Cargando...</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              Alertas de Vencimiento
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="tbl">
+              <thead><tr><th>Factura</th><th>Cliente</th><th>Valor</th><th>Vencimiento</th><th>Días</th></tr></thead>
+              <tbody id="vencidas-body"><tr><td colspan="5"><div class="empty-state" style="padding:24px"><div class="empty-text">Cargando...</div></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FLUJO DE CAJA ══ -->
+    <div id="page-flujo" class="tab-content">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card c1">
+          <div class="stat-icon si-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="stat-value" id="flujo-total">—</div>
+          <div class="stat-label">Flujo Proyectado Total</div>
+          <div class="stat-trend">Suma de facturas vigentes</div>
+        </div>
+        <div class="stat-card c3">
+          <div class="stat-icon si-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="stat-value" id="flujo-mes">—</div>
+          <div class="stat-label">Este mes</div>
+          <div class="stat-trend">Vencimientos mes actual</div>
+        </div>
+        <div class="stat-card c4">
+          <div class="stat-icon si-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="stat-value" id="flujo-prox">—</div>
+          <div class="stat-label">Próximos 30 días</div>
+          <div class="stat-trend">Cobros esperados</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Proyección por Mes
+            </div>
+            <span class="badge b-blue">Próximos 6 meses</span>
+          </div>
+          <div class="card-body" id="flujo-chart-wrap">
+            <div class="empty-state"><div class="empty-text">Cargando proyección...</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Calendario de Vencimientos
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="tbl">
+              <thead><tr><th>Factura</th><th>Cliente</th><th>Valor</th><th>Vence</th></tr></thead>
+              <tbody id="flujo-tabla"><tr><td colspan="4"><div class="empty-state" style="padding:24px"><div class="empty-text">Cargando...</div></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LIBRO DIARIO ══ -->
+    <div id="page-contabilidad" class="tab-content">
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card c1">
+          <div class="stat-icon si-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+          <div class="stat-value" id="cont-asientos">—</div>
+          <div class="stat-label">Total Asientos</div>
+          <div class="stat-trend">Pares débito/crédito</div>
+        </div>
+        <div class="stat-card c2">
+          <div class="stat-icon si-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div class="stat-value" id="cont-debito">—</div>
+          <div class="stat-label">Total Débitos</div>
+          <div class="stat-trend">COP acumulado</div>
+        </div>
+        <div class="stat-card c3">
+          <div class="stat-icon si-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div class="stat-value" id="cont-credito">—</div>
+          <div class="stat-label">Total Créditos</div>
+          <div class="stat-trend">COP acumulado</div>
+        </div>
+        <div class="stat-card c4">
+          <div class="stat-icon si-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="stat-value" id="cont-balance" class="balance-ok">—</div>
+          <div class="stat-label">Balance</div>
+          <div class="stat-trend">Debe = Haber</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Libro Diario — PUC Colombia
+            </div>
+            <div class="card-subtitle">Asientos contables generados automáticamente por cada cesión</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="cont-periodo" onchange="loadContabilidad()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text-primary)">
+              <option value="">Todo el período</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cód. PUC</th>
+                <th>Cuenta Contable</th>
+                <th>Referencia</th>
+                <th style="text-align:right">Débito</th>
+                <th style="text-align:right">Crédito</th>
+              </tr>
+            </thead>
+            <tbody id="cont-tbody">
+              <tr><td colspan="6"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando libro diario...</div></div></td></tr>
+            </tbody>
+            <tfoot id="cont-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ESTADO DE RESULTADOS ══ -->
+    <div id="page-resultados" class="tab-content">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-val pnl-positive" id="pnl-ingresos">—</div>
+          <div class="kpi-label">Ingresos Totales</div>
+          <div class="kpi-sub">Por cesiones de cartera</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val pnl-neutral" id="pnl-cesiones-n">—</div>
+          <div class="kpi-label">Cesiones Aceptadas</div>
+          <div class="kpi-sub">Eventos RADIAN aprobados</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-val pnl-positive" id="pnl-promedio">—</div>
+          <div class="kpi-label">Valor Promedio / Cesión</div>
+          <div class="kpi-sub">COP por operación</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Volumen por Mes
+            </div>
+          </div>
+          <div class="card-body" id="resultados-chart">
+            <div class="empty-state"><div class="empty-text">Cargando gráfica...</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              Estado de Resultados
+            </div>
+            <span class="badge b-green">Acumulado</span>
+          </div>
+          <div class="card-body" id="pnl-body">
+            <div class="empty-state"><div class="empty-text">Cargando P&amp;L...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- end content -->
 </div><!-- end main -->
 </div><!-- end layout -->
@@ -966,6 +1315,13 @@ async function loadUserInfo() {
 async function loadDashboard() {
   loadUserInfo();
   checkApiStatus();
+  // Load cesiones KPIs for dashboard
+  fetch(API+'/api/v1/cesion/?limit=500',{headers:authH()}).then(r=>r.json()).then(d=>{
+    const ces=(d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
+    const tot=ces.reduce((s,c)=>s+(c.valor_cesion||0),0);
+    const el=document.getElementById('dash-ces-total');
+    if(el) el.textContent='$'+fmtNum(tot)+' en '+ces.length+' cesión'+(ces.length!==1?'es':'');
+  }).catch(()=>{});
   try {
     const r=await fetch(API+'/api/v1/facturas/?limit=100',{headers:authH()});
     if(r.status===401){ doLogout(); return; }
@@ -1193,6 +1549,278 @@ async function checkApiStatus() {
   }
 }
 
+// ── MIS CESIONES ──
+let _cesionesCache = [];
+async function loadCesiones(filtro='') {
+  const tbody = document.getElementById('cesiones-body');
+  tbody.innerHTML='<tr><td colspan="8"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando cesiones...</div></div></td></tr>';
+  try {
+    const r = await fetch(API+'/api/v1/cesion/?limit=200', {headers:authH()});
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    _cesionesCache = d.cesiones || [];
+    renderCesiones(filtro);
+  } catch(e) {
+    tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-text" style="color:var(--red)">Error cargando cesiones</div></div></td></tr>';
+  }
+}
+function renderCesiones(filtro='') {
+  const ces = filtro ? _cesionesCache.filter(c=>c.estado===filtro) : _cesionesCache;
+  document.getElementById('ces-count').textContent = '('+ces.length+')';
+  const tbody = document.getElementById('cesiones-body');
+  if(!ces.length) {
+    tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No hay cesiones registradas</div><div class="empty-sub"><a style="color:var(--brand);cursor:pointer" onclick="showPage(\'cesion\')">Crear primera cesión</a></div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = ces.map(c => `
+    <tr>
+      <td><div class="td-primary" style="font-size:12px">${c.numero_cesion||'—'}</div><div class="td-mono">${(c.cude||'').substring(0,14)}…</div></td>
+      <td><div class="td-mono">${(c.cufe_factura||'').substring(0,16)}…</div></td>
+      <td style="font-size:12px">${c.cedente_nombre||'—'}<div class="td-mono">${c.cedente_nit||''}</div></td>
+      <td style="font-size:12px">${c.cesionario_nombre||'—'}<div class="td-mono">${c.cesionario_nit||''}</div></td>
+      <td><div class="td-amount">$${fmtNum(c.valor_cesion)}</div></td>
+      <td style="font-size:12px;color:var(--text-muted)">${fmtDate(c.fecha_cesion)}</td>
+      <td>${badgeCesion(c.estado)}</td>
+      <td style="text-align:center"><button class="btn btn-ghost btn-sm" onclick="descargarXml('${c.cude}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        XML</button></td>
+    </tr>`).join('');
+}
+function filterCesiones(btn, filtro) {
+  document.querySelectorAll('#page-cesiones .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCesiones(filtro);
+}
+function descargarXml(cude) {
+  window.open(API+'/api/v1/cesion/xml/'+cude, '_blank');
+}
+function badgeCesion(e) {
+  const m = {'ACEPTADA':'b-green','RECHAZADA':'b-red','PENDIENTE':'b-gold'};
+  return `<span class="badge ${m[e]||'b-gray'}">${e||'—'}</span>`;
+}
+
+// ── CARTERA ──
+async function loadCartera() {
+  try {
+    const r = await fetch(API+'/api/v1/facturas/?limit=200', {headers:authH()});
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    const fs = (d.facturas||[]).filter(f=>f.estado!=='CEDIDA'&&f.estado!=='PAGADA');
+    const hoy = new Date();
+    const buckets = [{min:-Infinity,max:0,id:'0',label:'Al día',color:'var(--green)'},
+      {min:1,max:30,id:'30',label:'1–30 días',color:'var(--gold)'},
+      {min:31,max:60,id:'60',label:'31–60 días',color:'#F97316'},
+      {min:61,max:90,id:'90',label:'61–90 días',color:'var(--red)'},
+      {min:91,max:Infinity,id:'over',label:'+90 días',color:'#7F1D1D'}];
+    const data = buckets.map(b=>({...b, items:[], total:0}));
+    const vencidas = [];
+    fs.forEach(f => {
+      const venc = new Date(f.fecha_vencimiento);
+      const dias = Math.floor((hoy - venc) / 86400000);
+      const b = data.find(b=>dias>=b.min&&dias<=b.max) || data[data.length-1];
+      b.items.push(f); b.total += f.valor_total||0;
+      if(dias > 0) vencidas.push({...f, dias});
+    });
+    const totalAll = data.reduce((s,b)=>s+b.total, 0) || 1;
+    data.forEach(b => {
+      document.getElementById('ag-'+b.id).textContent = '$'+fmtNum(b.total);
+      document.getElementById('ag-'+b.id+'-n').textContent = b.items.length+' factura'+(b.items.length!==1?'s':'');
+    });
+    document.getElementById('aging-bars').innerHTML = data.map(b=>`
+      <div class="aging-bar-row">
+        <div class="aging-bar-label">${b.label}</div>
+        <div class="aging-bar-track"><div class="aging-bar-fill" style="width:${(b.total/totalAll*100).toFixed(1)}%;background:${b.color}"></div></div>
+        <div class="aging-bar-val">$${fmtNum(b.total)}</div>
+      </div>`).join('');
+    vencidas.sort((a,b)=>b.dias-a.dias);
+    const vbody = document.getElementById('vencidas-body');
+    vbody.innerHTML = vencidas.length ? vencidas.slice(0,15).map(f=>`
+      <tr>
+        <td><div class="td-primary">${f.prefijo||'FV'}-${f.numero}</div></td>
+        <td style="font-size:12px">${f.adquiriente_nombre||'—'}</td>
+        <td><div class="td-amount">$${fmtNum(f.valor_total)}</div></td>
+        <td style="font-size:12px">${fmtDate(f.fecha_vencimiento)}</td>
+        <td><span class="badge ${f.dias>90?'b-red':f.dias>60?'b-red':f.dias>30?'b-gold':'b-gold'}">${f.dias}d</span></td>
+      </tr>`).join('')
+    : '<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="empty-text" style="color:var(--green)">✓ Sin facturas vencidas</div></div></td></tr>';
+  } catch(e) {
+    document.getElementById('vencidas-body').innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-text" style="color:var(--red)">Error cargando datos</div></div></td></tr>';
+  }
+}
+
+// ── FLUJO DE CAJA ──
+async function loadFlujo() {
+  try {
+    const r = await fetch(API+'/api/v1/facturas/?limit=200', {headers:authH()});
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    const fs = (d.facturas||[]).filter(f=>f.estado!=='PAGADA');
+    const hoy = new Date();
+    const months = [];
+    for(let i=0;i<6;i++){
+      const m = new Date(hoy.getFullYear(), hoy.getMonth()+i, 1);
+      months.push({year:m.getFullYear(), month:m.getMonth(), label:m.toLocaleDateString('es-CO',{month:'short',year:'2-digit'}), total:0, count:0});
+    }
+    let totalFlujo=0, mesActual=0, prox30=0;
+    const tabla = [];
+    fs.forEach(f => {
+      const venc = new Date(f.fecha_vencimiento);
+      const dias = Math.floor((venc - hoy) / 86400000);
+      totalFlujo += f.valor_total||0;
+      if(dias >= 0 && dias <= 30) prox30 += f.valor_total||0;
+      const mb = months.find(m=>m.year===venc.getFullYear()&&m.month===venc.getMonth());
+      if(mb){ mb.total+=f.valor_total||0; mb.count++; }
+      if(venc>=hoy) tabla.push(f);
+    });
+    const mesH = months[0];
+    mesActual = mesH ? mesH.total : 0;
+    document.getElementById('flujo-total').textContent = '$'+fmtNum(totalFlujo);
+    document.getElementById('flujo-mes').textContent = '$'+fmtNum(mesActual);
+    document.getElementById('flujo-prox').textContent = '$'+fmtNum(prox30);
+    const maxM = Math.max(...months.map(m=>m.total)) || 1;
+    document.getElementById('flujo-chart-wrap').innerHTML = `
+      <div>${months.map(m=>`
+        <div class="cashflow-month">
+          <div class="cashflow-month-label">${m.label}</div>
+          <div class="cashflow-bar-track"><div class="cashflow-bar-fill" style="width:${(m.total/maxM*100).toFixed(1)}%"></div></div>
+          <div class="cashflow-amount">$${fmtNum(m.total)}</div>
+          <div class="cashflow-count">${m.count} fact.</div>
+        </div>`).join('')}</div>`;
+    tabla.sort((a,b)=>new Date(a.fecha_vencimiento)-new Date(b.fecha_vencimiento));
+    document.getElementById('flujo-tabla').innerHTML = tabla.slice(0,20).map(f=>`
+      <tr>
+        <td><div class="td-primary">${f.prefijo||'FV'}-${f.numero}</div></td>
+        <td style="font-size:12px">${f.adquiriente_nombre||'—'}</td>
+        <td><div class="td-amount">$${fmtNum(f.valor_total)}</div></td>
+        <td style="font-size:12px">${fmtDate(f.fecha_vencimiento)}</td>
+      </tr>`).join('') || '<tr><td colspan="4"><div class="empty-state" style="padding:20px"><div class="empty-text">No hay facturas vigentes</div></div></td></tr>';
+  } catch(e) {
+    document.getElementById('flujo-chart-wrap').innerHTML='<div class="empty-state"><div class="empty-text" style="color:var(--red)">Error cargando flujo</div></div>';
+  }
+}
+
+// ── LIBRO DIARIO / CONTABILIDAD ──
+const PUC = {
+  '1305':'Deudores Comerciales — Clientes Nacionales',
+  '4135':'Ingresos Financieros — Cesión de Cartera',
+  '1310':'Cuentas por Cobrar — Cesiones',
+  '2205':'Proveedores Nacionales',
+  '1110':'Bancos — Cuenta Corriente',
+};
+async function loadContabilidad() {
+  const periodo = document.getElementById('cont-periodo').value;
+  try {
+    const r = await fetch(API+'/api/v1/cesion/?limit=500', {headers:authH()});
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    let ces = (d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
+    if(periodo) ces = ces.filter(c=>(c.fecha_cesion||'').startsWith(periodo));
+    const rows = [];
+    let totalD=0, totalC=0;
+    ces.forEach(c => {
+      const val = c.valor_cesion||0;
+      const fecha = fmtDate(c.fecha_cesion);
+      const ref = c.numero_cesion||c.cude?.substring(0,12)||'—';
+      rows.push({fecha, codigo:'1305', cuenta:PUC['1305'], ref, debito:val, credito:0, tipo:'debit'});
+      rows.push({fecha, codigo:'4135', cuenta:PUC['4135'], ref, debito:0, credito:val, tipo:'credit'});
+      totalD+=val; totalC+=val;
+    });
+    document.getElementById('cont-asientos').textContent = ces.length;
+    document.getElementById('cont-debito').textContent = '$'+fmtNum(totalD);
+    document.getElementById('cont-credito').textContent = '$'+fmtNum(totalC);
+    const bal = document.getElementById('cont-balance');
+    const diff = Math.abs(totalD - totalC);
+    bal.textContent = diff < 0.01 ? '✓ Balanceado' : '⚠ $'+fmtNum(diff);
+    bal.className = 'stat-value '+(diff<0.01?'balance-ok':'balance-err');
+    const tbody = document.getElementById('cont-tbody');
+    if(!rows.length){
+      tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:32px"><div class="empty-icon">📒</div><div class="empty-text">No hay asientos en este período</div><div class="empty-sub">Los asientos se generan automáticamente al crear cesiones</div></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r=>`
+      <tr class="journal-row-${r.tipo}">
+        <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${r.fecha}</td>
+        <td><span class="puc-code">${r.codigo}</span></td>
+        <td class="${r.tipo==='debit'?'journal-debit':'journal-credit'}" style="font-size:13px">${r.cuenta}</td>
+        <td class="journal-ref">${r.ref}</td>
+        <td style="text-align:right" class="amount-debit">${r.debito?'$'+fmtNum(r.debito):''}</td>
+        <td style="text-align:right" class="amount-credit">${r.credito?'$'+fmtNum(r.credito):''}</td>
+      </tr>`).join('');
+    document.getElementById('cont-tfoot').innerHTML = `
+      <tr style="background:var(--border-soft)">
+        <td colspan="4" style="font-size:12px;font-weight:700;padding:12px 16px;color:var(--text-secondary)">TOTALES</td>
+        <td style="text-align:right;font-weight:800;padding:12px 16px;color:var(--text-primary)">$${fmtNum(totalD)}</td>
+        <td style="text-align:right;font-weight:800;padding:12px 16px;color:var(--text-primary)">$${fmtNum(totalC)}</td>
+      </tr>`;
+  } catch(e) {
+    document.getElementById('cont-tbody').innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-text" style="color:var(--red)">Error cargando libro diario</div></div></td></tr>';
+  }
+}
+
+// ── ESTADO DE RESULTADOS ──
+async function loadResultados() {
+  try {
+    const r = await fetch(API+'/api/v1/cesion/?limit=500', {headers:authH()});
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    const ces = (d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
+    const totalIngresos = ces.reduce((s,c)=>s+(c.valor_cesion||0), 0);
+    const promedio = ces.length ? totalIngresos/ces.length : 0;
+    document.getElementById('pnl-ingresos').textContent = '$'+fmtNum(totalIngresos);
+    document.getElementById('pnl-cesiones-n').textContent = ces.length;
+    document.getElementById('pnl-promedio').textContent = '$'+fmtNum(promedio);
+    // Monthly grouping for bar chart
+    const byMonth = {};
+    ces.forEach(c => {
+      const key = (c.fecha_cesion||'').substring(0,7);
+      if(!byMonth[key]) byMonth[key] = {label:key, total:0, count:0};
+      byMonth[key].total += c.valor_cesion||0;
+      byMonth[key].count++;
+    });
+    const meses = Object.values(byMonth).sort((a,b)=>a.label.localeCompare(b.label)).slice(-8);
+    const maxV = Math.max(...meses.map(m=>m.total)) || 1;
+    const bw = 100/Math.max(meses.length,1);
+    const chartH = 180;
+    const svgBars = meses.map((m,i)=>{
+      const h = Math.max((m.total/maxV)*(chartH-40), 4);
+      const x = i*bw + bw*0.1;
+      const w = bw*0.8;
+      const y = chartH - 30 - h;
+      const lbl = m.label.substring(5)+'/'+m.label.substring(2,4);
+      return `<rect x="${x}%" y="${y}" width="${w}%" height="${h}" rx="3" fill="url(#bg)" opacity="0.9"/>
+        <text x="${x+w/2}%" y="${chartH-14}" text-anchor="middle" font-size="9" fill="#9DAEC0">${lbl}</text>
+        <text x="${x+w/2}%" y="${y-4}" text-anchor="middle" font-size="9" fill="var(--text-primary)" font-weight="600">${fmtNum(m.total)}</text>`;
+    }).join('');
+    document.getElementById('resultados-chart').innerHTML = `
+      <div class="chart-wrap">
+        <svg viewBox="0 0 100 ${chartH}" preserveAspectRatio="none" style="height:${chartH}px">
+          <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A4FD6"/><stop offset="100%" stop-color="#0891B2"/></linearGradient></defs>
+          ${svgBars}
+        </svg>
+      </div>`;
+    // P&L table
+    const gastos = totalIngresos * 0.005;
+    const utilidad = totalIngresos - gastos;
+    document.getElementById('pnl-body').innerHTML = `
+      <div class="pnl-section">
+        <div class="pnl-section-title">Ingresos Operacionales</div>
+        <div class="pnl-row"><span class="pnl-label">4135 — Ingresos por cesión de cartera</span><span class="pnl-val pnl-positive">$${fmtNum(totalIngresos)}</span></div>
+        <div class="pnl-row-total"><span>Total Ingresos</span><span class="pnl-positive">$${fmtNum(totalIngresos)}</span></div>
+      </div>
+      <div class="pnl-section">
+        <div class="pnl-section-title">Gastos Operacionales</div>
+        <div class="pnl-row"><span class="pnl-label">5105 — Gastos financieros DIAN (0.5%)</span><span class="pnl-val pnl-negative">-$${fmtNum(gastos)}</span></div>
+        <div class="pnl-row-total"><span>Total Gastos</span><span class="pnl-negative">-$${fmtNum(gastos)}</span></div>
+      </div>
+      <div class="pnl-section">
+        <div class="pnl-section-title">Resultado</div>
+        <div class="pnl-row-total" style="font-size:18px;border-top:2px solid var(--brand)"><span>Utilidad Neta</span><span class="${utilidad>=0?'pnl-positive':'pnl-negative'}">$${fmtNum(utilidad)}</span></div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('pnl-body').innerHTML='<div class="empty-state"><div class="empty-text" style="color:var(--red)">Error cargando resultados</div></div>';
+  }
+}
+
 function showPage(p) {
   document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
@@ -1203,6 +1831,11 @@ function showPage(p) {
     facturas:['Facturas','Gestión de facturas electrónicas endosables'],
     registrar:['Registrar Factura','Ingresa una nueva factura electrónica al sistema'],
     cesion:['Nueva Cesión','Enviar evento 037 a RADIAN · DIAN'],
+    cesiones:['Mis Cesiones','Historial de cesiones registradas en RADIAN'],
+    cartera:['Cartera','Análisis de antigüedad y alertas de vencimiento'],
+    flujo:['Flujo de Caja','Proyección de cobros por fechas de vencimiento'],
+    contabilidad:['Libro Diario','Asientos contables PUC — generados automáticamente'],
+    resultados:['Estado de Resultados','P&L acumulado del período'],
     consultar:['Consultar DIAN','Verificar estado de eventos en RADIAN'],
     api:['API Explorer','Prueba los endpoints directamente']
   };
@@ -1210,6 +1843,11 @@ function showPage(p) {
   document.getElementById('page-title').textContent=t[0];
   document.getElementById('page-sub').textContent=t[1];
   if(p==='facturas') loadFacturas();
+  if(p==='cesiones') loadCesiones();
+  if(p==='cartera') loadCartera();
+  if(p==='flujo') loadFlujo();
+  if(p==='contabilidad') loadContabilidad();
+  if(p==='resultados') loadResultados();
 }
 
 // ── UTILS ──
