@@ -1380,7 +1380,11 @@ function hasSesionActiva() {
 }
 
 // ── INIT ──
-window.onload = () => { if(hasSesionActiva()) showApp(); };
+window.onload = () => {
+  if(hasSesionActiva()) { showApp(); return; }
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('register')==='1') showPanel('register');
+};
 
 function showPanel(p) {
   document.getElementById('login-panel').style.display = p==='login' ? '' : 'none';
@@ -2355,7 +2359,7 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
   </ul>
   <div class="nav-actions">
     <a href="/app" class="btn btn-ghost" style="font-size:13px">Iniciar sesión</a>
-    <a href="/app" class="btn btn-primary" style="font-size:13px">Crear cuenta gratis</a>
+    <a href="/app?register=1" class="btn btn-primary" style="font-size:13px">Crear cuenta gratis</a>
   </div>
   <button class="hamburger" onclick="toggleMenu()" aria-label="Menú">
     <span></span><span></span><span></span>
@@ -2384,9 +2388,9 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
       <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">4135 · Ingresos</div>
     </div>
     <div class="float-card">
-      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Reporte Excel</div>
-      <div style="font-size:12px;font-weight:700;color:#FBBF24">📊 libro_diario.xlsx</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">Descargado</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">API · Respuesta DIAN</div>
+      <div style="font-size:12px;font-weight:700;color:#5EAEFF">Evento 037 enviado</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">CUDE: sha384_abc…f9</div>
     </div>
   </div>
   <div class="hero-badge">
@@ -2396,7 +2400,7 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
   <h1>Cede tus facturas<br>electrónicas ante la <em>DIAN</em><br>en minutos</h1>
   <p class="hero-sub">La única plataforma que automatiza el proceso RADIAN completo: registro, habilitación como título valor y cesión de crédito, con contabilidad automática PUC incluida.</p>
   <div class="hero-ctas">
-    <a href="/app" class="btn btn-primary btn-lg">
+    <a href="/app?register=1" class="btn btn-primary btn-lg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
       Crear cuenta gratis
     </a>
@@ -2572,7 +2576,7 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
           <li class="no">Soporte prioritario</li>
           <li class="no">Integración ERP</li>
         </ul>
-        <a href="/app" class="price-cta cta-outlined">Comenzar gratis</a>
+        <a href="/app?register=1" class="price-cta cta-outlined">Comenzar gratis</a>
       </div>
       <div class="price-card featured reveal reveal-delay-2">
         <div class="price-badge">MÁS POPULAR</div>
@@ -2590,7 +2594,7 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
           <li>Soporte prioritario (chat)</li>
           <li class="no">Integración ERP personalizada</li>
         </ul>
-        <a href="/app" class="price-cta cta-brand">Empezar con Pro</a>
+        <a href="/app?register=1" class="price-cta cta-brand">Empezar con Pro</a>
       </div>
       <div class="price-card reveal reveal-delay-4">
         <div class="price-tier">Enterprise</div>
@@ -2665,7 +2669,7 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
   <h2 class="reveal">¿Listo para ceder tu primera factura?</h2>
   <p class="reveal reveal-delay-1">Regístrate gratis en menos de 2 minutos. Sin tarjeta de crédito. Sin letra pequeña.</p>
   <div class="cta-band-actions reveal reveal-delay-2">
-    <a href="/app" class="btn btn-white btn-lg">
+    <a href="/app?register=1" class="btn btn-white btn-lg">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
       Crear cuenta gratis
     </a>
@@ -2754,7 +2758,7 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
         <div class="demo-step"><div class="demo-step-num">3</div><div class="demo-step-label">Cede el crédito ante la DIAN</div></div>
       </div>
       <div style="display:flex;gap:10px;margin-top:20px">
-        <a href="/app" class="btn btn-primary" style="flex:1;justify-content:center">Probar ahora gratis</a>
+        <a href="/app?register=1" class="btn btn-primary" style="flex:1;justify-content:center">Probar ahora gratis</a>
         <a href="mailto:demo@finprocapital.co" class="btn btn-ghost" style="flex:1;justify-content:center">Solicitar demo</a>
       </div>
     </div>
