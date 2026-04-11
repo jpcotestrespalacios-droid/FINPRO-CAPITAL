@@ -1,6 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 import uvicorn
 
 from routers import facturas, cesion, autenticacion, consultas, reportes
@@ -13,8 +13,44 @@ app.add_middleware(
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"],
+    expose_headers=["X-CSRF-Token"],
 )
+
+
+# ── CSRF middleware (double-submit cookie) ────────────────────────────────────
+# Aplica a todos los endpoints mutantes (/api/v1/**) autenticados por cookie.
+# Exento: Bearer token, GET/HEAD/OPTIONS, /auth/token, /auth/registro, /auth/logout
+_CSRF_EXEMPT = {"/api/v1/auth/token", "/api/v1/auth/registro", "/api/v1/auth/logout"}
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    if (
+        request.method not in ("POST", "PUT", "DELETE", "PATCH")
+        or not request.url.path.startswith("/api/v1/")
+        or request.url.path in _CSRF_EXEMPT
+        or request.headers.get("Authorization", "").startswith("Bearer ")
+    ):
+        return await call_next(request)
+
+    session_cookie = request.cookies.get("radian_session")
+    if not session_cookie:
+        return await call_next(request)  # Sin sesión → auth fallará después
+
+    csrf_header = request.headers.get("X-CSRF-Token", "")
+    csrf_cookie = request.cookies.get("radian_csrf", "")
+    if not csrf_header or not csrf_cookie:
+        return JSONResponse(status_code=403, content={"detail": "CSRF token requerido"})
+    try:
+        import secrets as _s
+        valid = _s.compare_digest(csrf_header, csrf_cookie)
+    except Exception:
+        valid = False
+    if not valid:
+        return JSONResponse(status_code=403, content={"detail": "CSRF token inválido"})
+
+    return await call_next(request)
+
 
 app.include_router(autenticacion.router, prefix="/api/v1/auth",     tags=["Autenticacion"])
 app.include_router(facturas.router,      prefix="/api/v1/facturas",  tags=["Facturas"])
@@ -1325,11 +1361,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 
 <script>
 const API = '';
-let TOKEN = sessionStorage.getItem('radian_token') || '';
-let USER_DATA = JSON.parse(sessionStorage.getItem('radian_user') || 'null');
+// ── TOKEN ya NO se guarda en sessionStorage (XSS-safe httpOnly cookie) ──
+// El JWT vive en la cookie radian_session (httpOnly, no accesible por JS).
+// Solo guardamos el CSRF token (leído de la cookie radian_csrf) y los datos
+// de usuario (no sensibles) en memoria de sesión.
+let USER_DATA = null;
+
+function getCsrfToken() {
+  // Lee la cookie radian_csrf (no httpOnly, accesible por JS para double-submit)
+  const match = document.cookie.match(/(?:^|;\s*)radian_csrf=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function hasSesionActiva() {
+  // No podemos leer radian_session (httpOnly), pero sí radian_csrf.
+  // Si existe radian_csrf asumimos que hay sesión activa.
+  return !!getCsrfToken();
+}
 
 // ── INIT ──
-window.onload = () => { if(TOKEN) showApp(); };
+window.onload = () => { if(hasSesionActiva()) showApp(); };
 
 function showPanel(p) {
   document.getElementById('login-panel').style.display = p==='login' ? '' : 'none';
@@ -1350,11 +1401,15 @@ async function doLogin() {
   try {
     const fd = new FormData();
     fd.append('username', email); fd.append('password', pass);
-    const r = await fetch(API+'/api/v1/auth/token', {method:'POST', body:fd});
+    // credentials:'include' → el navegador guarda las cookies httpOnly automáticamente
+    const r = await fetch(API+'/api/v1/auth/token', {method:'POST', body:fd, credentials:'include'});
     const d = await r.json();
-    if(!r.ok){ showErr(errEl, errTxt, d.detail||'Credenciales incorrectas'); return; }
-    TOKEN = d.access_token;
-    sessionStorage.setItem('radian_token', TOKEN);
+    if(!r.ok){
+      const msg = r.status===429 ? (d.detail||'Demasiados intentos. Espera 1 minuto.')
+                                 : (d.detail||'Credenciales incorrectas');
+      showErr(errEl, errTxt, msg); return;
+    }
+    // Token NO se guarda en JS — vive en httpOnly cookie
     showApp();
   } catch(e){ showErr(errEl, errTxt, 'Error de conexión con el servidor'); }
   finally{ btn.textContent='Iniciar sesión'; btn.disabled=false; }
@@ -1372,9 +1427,18 @@ async function doRegister() {
   if(!nombre||!nit||!email||!pass){ showErr(errEl, errTxt, 'Completa los campos obligatorios'); return; }
   btn.innerHTML='<span class="spinner"></span> Creando cuenta...'; btn.disabled=true;
   try {
-    const r=await fetch(API+'/api/v1/auth/registro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,nombre,nit,telefono:tel||null,password:pass})});
+    const r=await fetch(API+'/api/v1/auth/registro',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,nombre,nit,telefono:tel||null,password:pass}),
+      credentials:'include',
+    });
     const d=await r.json();
-    if(!r.ok){ showErr(errEl, errTxt, d.detail||'Error al registrar'); return; }
+    if(!r.ok){
+      const msg = r.status===429 ? (d.detail||'Demasiados intentos. Espera 5 minutos.')
+                                 : (d.detail||'Error al registrar');
+      showErr(errEl, errTxt, msg); return;
+    }
     toast('Cuenta creada. Ahora inicia sesión.', 'ok');
     showPanel('login');
     document.getElementById('l-email').value=email;
@@ -1382,10 +1446,16 @@ async function doRegister() {
   finally{ btn.textContent='Crear cuenta'; btn.disabled=false; }
 }
 
-function doLogout() {
-  TOKEN=''; USER_DATA=null;
-  sessionStorage.removeItem('radian_token');
-  sessionStorage.removeItem('radian_user');
+async function doLogout() {
+  USER_DATA=null;
+  try {
+    // Llama al backend para expirar las cookies httpOnly
+    await fetch(API+'/api/v1/auth/logout', {
+      method:'POST',
+      credentials:'include',
+      headers: authH(),
+    });
+  } catch(e){}
   document.getElementById('app-screen').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
 }
@@ -1399,12 +1469,38 @@ function showApp() {
   loadDashboard();
 }
 
-function authH(){ return {'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}; }
+// authH() devuelve headers con CSRF token (para mutaciones).
+// credentials:'include' debe pasarse en cada fetch por separado.
+function authH(withCsrf=false) {
+  const h = {'Content-Type':'application/json'};
+  if(withCsrf) { const csrf=getCsrfToken(); if(csrf) h['X-CSRF-Token']=csrf; }
+  return h;
+}
+
+// Wrapper central para todos los fetch autenticados.
+// - Siempre incluye credentials:'include' (envía cookies).
+// - Inyecta X-CSRF-Token en métodos mutantes.
+// - Redirige al login en 401 (sesión expirada).
+async function apiFetch(url, opts={}) {
+  const method = (opts.method||'GET').toUpperCase();
+  const isMutant = ['POST','PUT','DELETE','PATCH'].includes(method);
+  const headers = {
+    ...(opts.headers||{}),
+    ...(isMutant ? {'X-CSRF-Token': getCsrfToken()} : {}),
+  };
+  // No forzar Content-Type en FormData
+  if(opts.body && !(opts.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const r = await fetch(API+url, {...opts, headers, credentials:'include'});
+  if(r.status === 401) { doLogout(); throw new Error('401'); }
+  return r;
+}
 
 async function loadUserInfo() {
   try {
-    const r=await fetch(API+'/api/v1/auth/me',{headers:authH()});
-    if(r.ok){ const d=await r.json(); USER_DATA=d; sessionStorage.setItem('radian_user',JSON.stringify(d)); }
+    const r=await apiFetch('/api/v1/auth/me');
+    if(r.ok){ const d=await r.json(); USER_DATA=d; }
   }catch(e){}
   if(USER_DATA){
     const n=USER_DATA.nombre||USER_DATA.email;
@@ -1418,15 +1514,14 @@ async function loadDashboard() {
   loadUserInfo();
   checkApiStatus();
   // Load cesiones KPIs for dashboard
-  fetch(API+'/api/v1/cesion/?limit=500',{headers:authH()}).then(r=>r.json()).then(d=>{
+  apiFetch('/api/v1/cesion/?limit=500').then(r=>r.json()).then(d=>{
     const ces=(d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
     const tot=ces.reduce((s,c)=>s+(c.valor_cesion||0),0);
     const el=document.getElementById('dash-ces-total');
     if(el) el.textContent='$'+fmtNum(tot)+' en '+ces.length+' cesión'+(ces.length!==1?'es':'');
   }).catch(()=>{});
   try {
-    const r=await fetch(API+'/api/v1/facturas/?limit=100',{headers:authH()});
-    if(r.status===401){ doLogout(); return; }
+    const r=await apiFetch('/api/v1/facturas/?limit=100');
     if(!r.ok) throw new Error();
     const d=await r.json();
     const fs=d.facturas||[];
@@ -1455,8 +1550,8 @@ async function loadFacturas(estado='') {
   const tbody=document.getElementById('facturas-body');
   tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando...</div></div></td></tr>';
   try {
-    const url=API+'/api/v1/facturas/?limit=100'+(estado?'&estado='+estado:'');
-    const r=await fetch(url,{headers:authH()});
+    const url='/api/v1/facturas/?limit=100'+(estado?'&estado='+estado:'');
+    const r=await apiFetch(url);
     if(!r.ok) throw new Error();
     const d=await r.json();
     const fs=d.facturas||[];
@@ -1500,7 +1595,7 @@ async function verDetalle(cufe) {
   body.innerHTML='<div class="empty-state" style="padding:20px"><div class="empty-text">Cargando...</div></div>';
   modal.classList.add('show');
   try {
-    const r=await fetch(API+'/api/v1/facturas/'+cufe,{headers:authH()});
+    const r=await apiFetch('/api/v1/facturas/'+cufe);
     if(!r.ok) throw new Error();
     const f=await r.json();
     document.getElementById('modal-detalle-title').textContent=`Factura ${f.prefijo||'FV'}-${f.numero}`;
@@ -1529,7 +1624,7 @@ document.getElementById('modal-detalle').addEventListener('click', function(e){ 
 
 async function quickHabilitar(cufe) {
   try {
-    const r=await fetch(API+'/api/v1/facturas/'+cufe+'/habilitar-cesion',{method:'PUT',headers:authH()});
+    const r=await apiFetch('/api/v1/facturas/'+cufe+'/habilitar-cesion',{method:'PUT'});
     const d=await r.json();
     if(r.ok){ toast('Factura habilitada como título valor','ok'); loadFacturas(); closeModal('modal-detalle'); }
     else toast(d.detail||'Error al habilitar','err');
@@ -1553,7 +1648,7 @@ async function registrarFactura() {
   btn.disabled=true; txt.innerHTML='<span class="spinner"></span> Registrando...';
   const box=document.getElementById('resp-reg-fact');
   try {
-    const r=await fetch(API+'/api/v1/facturas/registrar',{method:'POST',headers:authH(),body:JSON.stringify(body)});
+    const r=await apiFetch('/api/v1/facturas/registrar',{method:'POST',body:JSON.stringify(body)});
     const d=await r.json();
     box.className='resp-box show';
     if(r.ok){
@@ -1571,7 +1666,7 @@ async function habilitarTitulo() {
   const box=document.getElementById('resp-habilitar');
   if(!cufe){ box.className='resp-box show'; box.innerHTML='<div class="resp-err">Ingresa el CUFE</div>'; return; }
   try {
-    const r=await fetch(API+'/api/v1/facturas/'+cufe+'/habilitar-cesion',{method:'PUT',headers:authH()});
+    const r=await apiFetch('/api/v1/facturas/'+cufe+'/habilitar-cesion',{method:'PUT'});
     const d=await r.json();
     box.className='resp-box show';
     if(r.ok){ box.innerHTML='<div class="resp-ok">✅ '+d.mensaje+'</div>'; toast('Factura habilitada','ok'); }
@@ -1592,7 +1687,7 @@ async function ceder() {
   }
   btn.disabled=true; txt.innerHTML='<span class="spinner"></span> Enviando a DIAN...';
   try {
-    const r=await fetch(API+'/api/v1/cesion/crear',{method:'POST',headers:authH(),body:JSON.stringify({cufe_factura:cufe,cesionario_nit:nit,cesionario_nombre:nombre,valor_cesion:valor})});
+    const r=await apiFetch('/api/v1/cesion/crear',{method:'POST',body:JSON.stringify({cufe_factura:cufe,cesionario_nit:nit,cesionario_nombre:nombre,valor_cesion:valor})});
     const d=await r.json();
     box.className='resp-box show';
     if(r.ok){
@@ -1611,7 +1706,7 @@ async function consultarDian() {
   if(!cude){ box.className='resp-box show'; box.innerHTML='<div class="resp-err">Ingresa el CUDE</div>'; return; }
   box.className='resp-box show'; box.innerHTML='<div style="color:#9CA3AF">Consultando DIAN...</div>';
   try {
-    const r=await fetch(API+'/api/v1/cesion/'+cude+'/estado',{headers:authH()});
+    const r=await apiFetch('/api/v1/cesion/'+cude+'/estado');
     const d=await r.json();
     box.innerHTML=r.ok?'<div class="resp-ok">✅ Respuesta DIAN</div><div class="resp-data">'+JSON.stringify(d,null,2)+'</div>':'<div class="resp-err">❌ '+(d.detail||JSON.stringify(d))+'</div>';
   }catch(e){ box.innerHTML='<div class="resp-err">❌ Error de conexión</div>'; }
@@ -1621,7 +1716,7 @@ async function pingDian() {
   const box=document.getElementById('resp-ping');
   box.className='resp-box show'; box.innerHTML='<div style="color:#9CA3AF">Verificando conexión DIAN...</div>';
   try {
-    const r=await fetch(API+'/api/v1/consultas/ping-dian',{headers:authH()});
+    const r=await apiFetch('/api/v1/consultas/ping-dian');
     const d=await r.json();
     box.innerHTML=r.ok?'<div class="resp-ok">✅ Conexión exitosa</div><div class="resp-data">'+JSON.stringify(d,null,2)+'</div>':'<div class="resp-err">❌ '+JSON.stringify(d)+'</div>';
   }catch(e){ box.innerHTML='<div class="resp-err">❌ No se pudo conectar a DIAN</div>'; }
@@ -1632,8 +1727,7 @@ async function probarEndpoint() {
   const box=document.getElementById('resp-api');
   box.innerHTML='<div style="color:#9CA3AF">Ejecutando...</div>';
   try {
-    const hdrs=ep.startsWith('/api')?authH():{};
-    const r=await fetch(API+ep,{headers:hdrs});
+    const r = ep.startsWith('/api') ? await apiFetch(ep) : await fetch(ep);
     const d=await r.json();
     box.innerHTML='<div class="resp-ok">'+r.status+' OK</div><div class="resp-data">'+JSON.stringify(d,null,2)+'</div>';
   }catch(e){ box.innerHTML='<div class="resp-err">Error de conexión</div>'; }
@@ -1657,7 +1751,7 @@ async function loadCesiones(filtro='') {
   const tbody = document.getElementById('cesiones-body');
   tbody.innerHTML='<tr><td colspan="8"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando cesiones...</div></div></td></tr>';
   try {
-    const r = await fetch(API+'/api/v1/cesion/?limit=200', {headers:authH()});
+    const r = await apiFetch('/api/v1/cesion/?limit=200');
     if(!r.ok) throw new Error();
     const d = await r.json();
     _cesionesCache = d.cesiones || [];
@@ -1706,7 +1800,7 @@ function descargarReporte(tipo) {
   const a = document.createElement('a');
   a.href = url;
   // Add auth header via fetch + blob
-  fetch(url, {headers: authH()})
+  apiFetch('/api/v1/reportes/'+tipo)
     .then(r => {
       if(!r.ok) throw new Error('Error '+r.status);
       return r.blob();
@@ -1728,7 +1822,7 @@ function badgeCesion(e) {
 // ── CARTERA ──
 async function loadCartera() {
   try {
-    const r = await fetch(API+'/api/v1/facturas/?limit=200', {headers:authH()});
+    const r = await apiFetch('/api/v1/facturas/?limit=200');
     if(!r.ok) throw new Error();
     const d = await r.json();
     const fs = (d.facturas||[]).filter(f=>f.estado!=='CEDIDA'&&f.estado!=='PAGADA');
@@ -1777,7 +1871,7 @@ async function loadCartera() {
 // ── FLUJO DE CAJA ──
 async function loadFlujo() {
   try {
-    const r = await fetch(API+'/api/v1/facturas/?limit=200', {headers:authH()});
+    const r = await apiFetch('/api/v1/facturas/?limit=200');
     if(!r.ok) throw new Error();
     const d = await r.json();
     const fs = (d.facturas||[]).filter(f=>f.estado!=='PAGADA');
@@ -1836,7 +1930,7 @@ const PUC = {
 async function loadContabilidad() {
   const periodo = document.getElementById('cont-periodo').value;
   try {
-    const r = await fetch(API+'/api/v1/cesion/?limit=500', {headers:authH()});
+    const r = await apiFetch('/api/v1/cesion/?limit=500');
     if(!r.ok) throw new Error();
     const d = await r.json();
     let ces = (d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
@@ -1886,7 +1980,7 @@ async function loadContabilidad() {
 // ── ESTADO DE RESULTADOS ──
 async function loadResultados() {
   try {
-    const r = await fetch(API+'/api/v1/cesion/?limit=500', {headers:authH()});
+    const r = await apiFetch('/api/v1/cesion/?limit=500');
     if(!r.ok) throw new Error();
     const d = await r.json();
     const ces = (d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
