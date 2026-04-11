@@ -94,6 +94,17 @@ async def crear_cesion(data: CesionRequest, current_user: dict = Depends(get_cur
     }
 
 
+@router.get("/", summary="Listar todas las cesiones del usuario")
+async def listar_cesiones(skip: int = 0, limit: int = 100, current_user: dict = Depends(get_current_user)):
+    sb = get_sb()
+    facturas = sb.table("facturas").select("id").eq("emisor_id", current_user["id"]).execute()
+    if not facturas.data:
+        return {"total": 0, "cesiones": []}
+    ids = [f["id"] for f in facturas.data]
+    result = sb.table("cesiones").select("*", count="exact").in_("factura_id", ids).order("fecha_cesion", desc=True).range(skip, skip + limit - 1).execute()
+    return {"total": result.count or len(result.data), "cesiones": result.data or []}
+
+
 @router.get("/{cude}/estado", summary="Consultar estado de cesión en DIAN")
 async def consultar_estado_cesion(cude: str, current_user: dict = Depends(get_current_user)):
     result = get_sb().table("cesiones").select("*").eq("cude", cude).execute()
