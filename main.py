@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 import uvicorn
 
-from routers import facturas, cesion, autenticacion, consultas
+from routers import facturas, cesion, autenticacion, consultas, reportes
 from config import settings
 
 app = FastAPI(title="RADIAN API", version="1.0.0", docs_url=None, redoc_url=None)
@@ -20,6 +20,7 @@ app.include_router(autenticacion.router, prefix="/api/v1/auth",     tags=["Auten
 app.include_router(facturas.router,      prefix="/api/v1/facturas",  tags=["Facturas"])
 app.include_router(cesion.router,        prefix="/api/v1/cesion",    tags=["Cesion RADIAN"])
 app.include_router(consultas.router,     prefix="/api/v1/consultas", tags=["Consultas DIAN"])
+app.include_router(reportes.router,      prefix="/api/v1/reportes",  tags=["Reportes Excel"])
 
 UI = r"""<!DOCTYPE html>
 <html lang="es">
@@ -530,6 +531,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     <span class="nav-label">Estado de Resultados</span>
   </a>
+  <a class="nav-item" id="nav-reportes" onclick="showPage('reportes')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    <span class="nav-label">Reportes Excel</span>
+  </a>
   <div class="nav-section">Herramientas</div>
   <a class="nav-item" id="nav-consultar" onclick="showPage('consultar')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -861,6 +866,103 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
                 Ver facturas disponibles
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTES EXCEL ══ -->
+    <div id="page-reportes" class="tab-content">
+      <div style="background:linear-gradient(135deg,#0F2554,#059669);border-radius:var(--radius-lg);padding:20px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px">Reportes Contables Excel</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">Descarga reportes profesionales con formato contable, gráficas y PUC colombiano</div>
+        </div>
+        <button class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.3)" onclick="descargarReporte('consolidado')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Descargar Reporte Consolidado
+        </button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card c1" style="cursor:pointer" onclick="descargarReporte('libro-diario')">
+          <div class="stat-icon si-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div class="stat-value" style="font-size:20px">Libro Diario</div>
+          <div class="stat-label">Asientos PUC automáticos</div>
+          <div class="stat-trend" style="margin-top:10px">
+            <span class="badge b-blue">Débitos · Créditos · Balance</span>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-primary btn-sm btn-block" onclick="event.stopPropagation();descargarReporte('libro-diario')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              Descargar .xlsx
+            </button>
+          </div>
+        </div>
+        <div class="stat-card c2" style="cursor:pointer" onclick="descargarReporte('cartera')">
+          <div class="stat-icon si-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18M10 18H3M10 6H3m7 0h11M17 18h4"/></svg>
+          </div>
+          <div class="stat-value" style="font-size:20px">Cartera</div>
+          <div class="stat-label">Análisis de antigüedad</div>
+          <div class="stat-trend" style="margin-top:10px">
+            <span class="badge b-green">Aging · Semáforos · Gráfica</span>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-success btn-sm btn-block" onclick="event.stopPropagation();descargarReporte('cartera')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              Descargar .xlsx
+            </button>
+          </div>
+        </div>
+        <div class="stat-card c3" style="cursor:pointer" onclick="descargarReporte('estado-resultados')">
+          <div class="stat-icon si-gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="stat-value" style="font-size:20px">P&amp;L</div>
+          <div class="stat-label">Estado de Resultados</div>
+          <div class="stat-trend" style="margin-top:10px">
+            <span class="badge b-gold">Ingresos · Gastos · Utilidad</span>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-sm btn-block" style="background:var(--gold);color:#fff" onclick="event.stopPropagation();descargarReporte('estado-resultados')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              Descargar .xlsx
+            </button>
+          </div>
+        </div>
+        <div class="stat-card c4" style="cursor:pointer" onclick="descargarReporte('flujo-caja')">
+          <div class="stat-icon si-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-value" style="font-size:20px">Flujo de Caja</div>
+          <div class="stat-label">Proyección de cobros</div>
+          <div class="stat-trend" style="margin-top:10px">
+            <span class="badge b-purple">6 meses · Calendario</span>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-sm btn-block" style="background:var(--purple);color:#fff" onclick="event.stopPropagation();descargarReporte('flujo-caja')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              Descargar .xlsx
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Contenido de cada reporte
+          </div>
+        </div>
+        <div class="card-body" style="padding:0 20px">
+          <div class="ep-list">
+            <div class="ep-item"><span class="method m-get">XLSX</span><div class="ep-info"><div class="ep-path">Libro Diario</div><div class="ep-desc">2 hojas: asientos diarios PUC 1305/4135 + resumen saldos por cuenta. Balance automático Debe=Haber.</div></div></div>
+            <div class="ep-item"><span class="method m-get">XLSX</span><div class="ep-info"><div class="ep-path">Cartera</div><div class="ep-desc">2 hojas: resumen aging con gráfica de barras + detalle por factura con semáforo de mora y colores condicionales.</div></div></div>
+            <div class="ep-item"><span class="method m-get">XLSX</span><div class="ep-info"><div class="ep-path">Estado de Resultados</div><div class="ep-desc">3 hojas: P&L completo (ingresos/gastos/utilidad) + detalle mensual + detalle de cesiones aceptadas.</div></div></div>
+            <div class="ep-item"><span class="method m-get">XLSX</span><div class="ep-info"><div class="ep-path">Flujo de Caja</div><div class="ep-desc">2 hojas: proyección 6 meses por fecha de vencimiento + calendario completo con estado (vencido/este mes/proyectado).</div></div></div>
+            <div class="ep-item"><span class="method m-post">XLSX</span><div class="ep-info"><div class="ep-path">Consolidado ⭐</div><div class="ep-desc">6 hojas en un solo archivo: Dashboard KPIs + Libro Diario + Cartera + Flujo + Estado de Resultados. Listo para auditoría.</div></div></div>
           </div>
         </div>
       </div>
@@ -1594,6 +1696,30 @@ function filterCesiones(btn, filtro) {
 function descargarXml(cude) {
   window.open(API+'/api/v1/cesion/xml/'+cude, '_blank');
 }
+
+// ── REPORTES EXCEL ──
+function descargarReporte(tipo) {
+  const btn = event && event.target ? event.target.closest('button') : null;
+  if(btn){ const orig=btn.innerHTML; btn.innerHTML='<span class="spinner"></span> Generando...'; btn.disabled=true; setTimeout(()=>{btn.innerHTML=orig;btn.disabled=false;},4000); }
+  toast('Generando reporte Excel...', 'info');
+  const url = API+'/api/v1/reportes/'+tipo;
+  const a = document.createElement('a');
+  a.href = url;
+  // Add auth header via fetch + blob
+  fetch(url, {headers: authH()})
+    .then(r => {
+      if(!r.ok) throw new Error('Error '+r.status);
+      return r.blob();
+    })
+    .then(blob => {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = tipo+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+      link.click();
+      toast('Reporte descargado exitosamente', 'ok');
+    })
+    .catch(e => toast('Error generando reporte: '+e.message, 'err'));
+}
 function badgeCesion(e) {
   const m = {'ACEPTADA':'b-green','RECHAZADA':'b-red','PENDIENTE':'b-gold'};
   return `<span class="badge ${m[e]||'b-gray'}">${e||'—'}</span>`;
@@ -1836,6 +1962,7 @@ function showPage(p) {
     flujo:['Flujo de Caja','Proyección de cobros por fechas de vencimiento'],
     contabilidad:['Libro Diario','Asientos contables PUC — generados automáticamente'],
     resultados:['Estado de Resultados','P&L acumulado del período'],
+    reportes:['Reportes Excel','Descarga reportes contables profesionales en .xlsx'],
     consultar:['Consultar DIAN','Verificar estado de eventos en RADIAN'],
     api:['API Explorer','Prueba los endpoints directamente']
   };
