@@ -2147,10 +2147,11 @@ body{font-family:var(--font);background:#fff;color:var(--text);-webkit-font-smoo
 .btn-outline-white:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.7)}
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:transparent}
 .hamburger span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:.25s}
+.mobile-menu{display:none}
 @media(max-width:768px){
   .nav-links,.nav-actions .btn-ghost{display:none}
   .hamburger{display:flex}
-  .mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:#fff;border-bottom:1px solid var(--border);padding:20px 5%;box-shadow:var(--shadow-md)}
+  .mobile-menu{position:fixed;top:64px;left:0;right:0;background:#fff;border-bottom:1px solid var(--border);padding:20px 5%;box-shadow:var(--shadow-md);z-index:999}
   .mobile-menu.open{display:block}
   .mobile-menu a{display:block;padding:12px 0;font-size:15px;font-weight:500;color:var(--text2);text-decoration:none;border-bottom:1px solid var(--border)}
   .mobile-menu a:last-child{border:none}
@@ -2171,12 +2172,12 @@ body{font-family:var(--font);background:#fff;color:var(--text);-webkit-font-smoo
 .hero-trust-dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.25)}
 /* Floating cards in hero */
 .hero-floats{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.float-card{position:absolute;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-size:12px;color:rgba(255,255,255,.7);font-weight:500;animation:float 6s ease-in-out infinite}
-.float-card:nth-child(1){top:20%;right:6%;animation-delay:0s}
-.float-card:nth-child(2){top:55%;right:3%;animation-delay:2s}
-.float-card:nth-child(3){top:30%;left:3%;animation-delay:4s}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-@media(max-width:768px){.float-card{display:none}}
+.float-card{position:absolute;background:rgba(255,255,255,.07);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 18px;font-size:12px;color:rgba(255,255,255,.8);font-weight:500;animation:float 6s ease-in-out infinite}
+.float-card:nth-child(1){top:22%;right:4%;animation-delay:0s}
+.float-card:nth-child(2){bottom:28%;right:4%;animation-delay:2s}
+.float-card:nth-child(3){top:35%;left:2%;animation-delay:4s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media(max-width:900px){.float-card{display:none}}
 
 /* ── STATS BAR ── */
 .stats-bar{background:#fff;border-bottom:1px solid var(--border);padding:40px 5%}
