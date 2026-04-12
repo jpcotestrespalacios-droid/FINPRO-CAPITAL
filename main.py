@@ -259,6 +259,71 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 .empty-text{font-size:14px;font-weight:500;color:var(--text-secondary);margin-bottom:6px}
 .empty-sub{font-size:12px}
 
+/* ─── ONBOARDING WIZARD ─── */
+.wiz-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+.wiz-overlay.show{display:flex}
+.wiz-box{background:#fff;border-radius:20px;width:100%;max-width:580px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.25);animation:wiz-in .3s ease}
+@keyframes wiz-in{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.wiz-prog-bar{height:5px;background:var(--border-soft)}
+.wiz-prog-fill{height:5px;background:linear-gradient(90deg,var(--brand),#0891B2);transition:width .4s ease}
+.wiz-body{padding:36px 36px 24px}
+.wiz-step-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--brand);margin-bottom:10px}
+.wiz-title{font-size:22px;font-weight:800;color:var(--text-primary);letter-spacing:-.5px;line-height:1.25;margin-bottom:10px}
+.wiz-sub{font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:24px}
+.wiz-visual{background:linear-gradient(135deg,#F0F5FF,#EEF3FF);border-radius:14px;padding:20px 22px;margin-bottom:22px;display:flex;flex-direction:column;gap:16px}
+.wiz-vstep{display:flex;align-items:flex-start;gap:14px}
+.wiz-vstep-num{width:34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wiz-vstep-name{font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:2px}
+.wiz-vstep-desc{font-size:12px;color:var(--text-secondary);line-height:1.55}
+.wiz-footer{display:flex;align-items:center;justify-content:space-between;padding:0 36px 28px;gap:12px}
+.wiz-dots{display:flex;gap:6px}
+.wiz-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:.25s}
+.wiz-dot.active{background:var(--brand);width:22px;border-radius:4px}
+.wiz-form .wfg{margin-bottom:14px}
+.wiz-form .wfg label{font-size:12px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.wiz-form .wfg input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);outline:none;transition:.15s}
+.wiz-form .wfg input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(26,79,214,.08)}
+.wiz-form .wfg .whint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.wiz-checklist{display:flex;flex-direction:column;gap:10px}
+.wiz-ci{display:flex;align-items:center;gap:14px;background:#F0FDF4;border:1px solid #A7F3D0;border-radius:12px;padding:14px 16px}
+.wiz-ci-icon{width:34px;height:34px;background:#D1FAE5;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#059669;font-size:16px}
+.wiz-ci-label{font-size:13px;font-weight:600;color:var(--text-primary)}
+.wiz-ci-sub{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.wiz-skip{font-size:12px;color:var(--text-muted);cursor:pointer;text-decoration:underline;padding:4px}
+.wiz-skip:hover{color:var(--text-secondary)}
+
+/* ─── CHECKLIST WIDGET ─── */
+.obw{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px}
+.obw-header{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between}
+.obw-title{font-size:13px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px}
+.obw-pct{font-size:12px;font-weight:700;color:var(--brand)}
+.obw-bar-wrap{height:4px;background:var(--border-soft);margin:0 18px 12px;border-radius:99px}
+.obw-bar{height:4px;background:linear-gradient(90deg,var(--brand),#0891B2);border-radius:99px;transition:width .5s ease}
+.obw-items{padding:0 18px 14px;display:flex;flex-direction:column;gap:6px}
+.obw-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:.12s;text-decoration:none}
+.obw-item:hover{background:var(--bg-light)}
+.obw-item.done .obw-cb{background:var(--green);border-color:var(--green)}
+.obw-item.done .obw-lbl{text-decoration:line-through;color:var(--text-muted)}
+.obw-cb{width:18px;height:18px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.2s}
+.obw-cb-check{display:none;width:9px;height:9px}
+.obw-item.done .obw-cb-check{display:block}
+.obw-lbl{font-size:12px;color:var(--text-secondary);font-weight:500}
+.obw-dismiss{text-align:center;padding:0 18px 12px}
+.obw-dismiss a{font-size:11px;color:var(--text-muted);cursor:pointer;text-decoration:underline}
+
+/* ─── TOOLTIPS ─── */
+.tip{position:relative;display:inline-flex;margin-left:5px;vertical-align:middle}
+.tip-btn{width:15px;height:15px;border-radius:50%;background:var(--brand-light);color:var(--brand);font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:default;border:none;font-family:var(--font);line-height:1}
+.tip-box{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0D1B2E;color:#fff;font-size:12px;line-height:1.6;padding:10px 14px;border-radius:10px;width:250px;pointer-events:none;opacity:0;transition:.15s;z-index:200;font-weight:400;white-space:normal}
+.tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#0D1B2E}
+.tip:hover .tip-box,.tip:focus-within .tip-box{opacity:1}
+
+/* ─── EMPTY STATES MEJORADOS ─── */
+.empty-hero{text-align:center;padding:56px 32px}
+.empty-hero-icon{width:64px;height:64px;background:var(--brand-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.empty-hero-title{font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.empty-hero-sub{font-size:13px;color:var(--text-secondary);max-width:360px;margin:0 auto 22px;line-height:1.65}
+
 /* ─── BADGES ─── */
 .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:0.3px;white-space:nowrap}
 .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
@@ -673,6 +738,37 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
           <div class="stat-trend">Enviadas a RADIAN</div>
         </div>
       </div>
+      <!-- ONBOARDING CHECKLIST WIDGET -->
+      <div class="obw" id="obw-widget">
+        <div class="obw-header">
+          <div class="obw-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;color:var(--brand)"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+            Primeros pasos
+          </div>
+          <div class="obw-pct" id="obw-pct">0%</div>
+        </div>
+        <div class="obw-bar-wrap"><div class="obw-bar" id="obw-bar" style="width:0%"></div></div>
+        <div class="obw-items">
+          <div class="obw-item" id="ob-0" onclick="showPage('registrar')">
+            <div class="obw-cb"><svg class="obw-cb-check" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+            <span class="obw-lbl">Registrar primera factura real</span>
+          </div>
+          <div class="obw-item" id="ob-1" onclick="showPage('facturas')">
+            <div class="obw-cb"><svg class="obw-cb-check" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+            <span class="obw-lbl">Habilitar factura como título valor</span>
+          </div>
+          <div class="obw-item" id="ob-2" onclick="showPage('cesion')">
+            <div class="obw-cb"><svg class="obw-cb-check" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+            <span class="obw-lbl">Crear primera cesión RADIAN</span>
+          </div>
+          <div class="obw-item" id="ob-3" onclick="showPage('reportes')">
+            <div class="obw-cb"><svg class="obw-cb-check" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+            <span class="obw-lbl">Descargar primer reporte Excel</span>
+          </div>
+        </div>
+        <div class="obw-dismiss"><a onclick="dismissChecklist()">Ocultar lista de inicio</a></div>
+      </div>
+
       <div class="grid-2 mb-20">
         <div class="card">
           <div class="card-head">
@@ -773,7 +869,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
           </div>
           <div class="card-body">
             <div class="section-label">Identificación</div>
-            <div class="fg"><label>CUFE <span style="color:var(--red)">*</span></label><input id="reg-cufe" placeholder="Código Único de Factura Electrónica (96 chars)"/></div>
+            <div class="fg"><label>CUFE <span style="color:var(--red)">*</span><span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">El CUFE es el código único de 96 caracteres hexadecimales que identifica tu factura electrónica. Lo encuentras en el PDF de tu factura o en el portal de tu proveedor de facturación electrónica (campo &lt;cbc:UUID&gt; en el XML).</span></span></label><input id="reg-cufe" placeholder="Código Único de Factura Electrónica (96 chars)" style="font-family:monospace;font-size:12px"/></div>
             <div class="form-row">
               <div class="fg"><label>Número de factura <span style="color:var(--red)">*</span></label><input id="reg-numero" placeholder="00001"/></div>
               <div class="fg"><label>Prefijo</label><input id="reg-prefijo" placeholder="FV" value="FV"/></div>
@@ -828,6 +924,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
               <div class="card-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 Habilitar título valor
+                <span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">Habilitar como título valor inscribe la factura en RADIAN, convirtiéndola en un instrumento negociable. Este paso es obligatorio antes de ceder. Solo se puede hacer una vez por factura.</span></span>
               </div>
               <div class="card-subtitle">Habilita una factura ya registrada</div>
             </div>
@@ -859,11 +956,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
           </div>
           <div class="card-body">
             <div class="section-label">Factura a ceder</div>
-            <div class="fg"><label>CUFE de la factura <span style="color:var(--red)">*</span></label><input id="f-cufe" placeholder="Código único de la factura electrónica"/><div class="hint">La factura debe estar habilitada como título valor</div></div>
+            <div class="fg"><label>CUFE de la factura <span style="color:var(--red)">*</span><span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">Ingresa el CUFE de la factura que deseas ceder. Debe estar previamente habilitada como título valor desde la sección "Registrar Factura".</span></span></label><input id="f-cufe" placeholder="Código único de la factura electrónica" style="font-family:monospace;font-size:12px"/><div class="hint">La factura debe estar habilitada como título valor</div></div>
             <div class="divider"></div>
             <div class="section-label">Cesionario (quien recibe)</div>
             <div class="form-row">
-              <div class="fg"><label>NIT Cesionario <span style="color:var(--red)">*</span></label><input id="f-nit-ces" placeholder="900.123.456-1"/></div>
+              <div class="fg"><label>NIT Cesionario <span style="color:var(--red)">*</span><span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">El cesionario es quien recibirá el derecho de cobro de la factura (ej: un banco o fondo de inversión). El NIT debe estar registrado ante la DIAN.</span></span></label><input id="f-nit-ces" placeholder="900.123.456-1"/></div>
               <div class="fg"><label>Nombre Cesionario <span style="color:var(--red)">*</span></label><input id="f-nombre-ces" placeholder="BANCO EJEMPLO SAS"/></div>
             </div>
             <div class="divider"></div>
@@ -1346,6 +1443,169 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 </div><!-- end layout -->
 </div><!-- end app-screen -->
 
+<!-- ══ WIZARD ONBOARDING ══ -->
+<div class="wiz-overlay" id="wiz-overlay">
+  <div class="wiz-box" id="wiz-box">
+    <div class="wiz-prog-bar"><div class="wiz-prog-fill" id="wiz-fill" style="width:25%"></div></div>
+    <div class="wiz-body" id="wiz-body">
+
+      <!-- PASO 1 -->
+      <div id="wiz-1">
+        <div class="wiz-step-tag">Paso 1 de 4</div>
+        <div class="wiz-title">Bienvenido a FinPro Capital 👋</div>
+        <div class="wiz-sub">FinPro Capital te permite <strong>ceder facturas electrónicas ante la DIAN</strong> a través del sistema RADIAN, convirtiendo tus cuentas por cobrar en liquidez inmediata.<br><br>La plataforma automatiza todo el proceso: desde el registro del CUFE hasta la contabilidad automática en el PUC colombiano.</div>
+        <div class="wiz-visual" style="flex-direction:row;gap:20px;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px;text-align:center;padding:10px">
+            <div style="font-size:28px;margin-bottom:6px">📄</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary)">Registra</div>
+            <div style="font-size:11px;color:var(--text-secondary)">Tus facturas con CUFE</div>
+          </div>
+          <div style="flex:0;display:flex;align-items:center;color:var(--brand);font-size:20px">→</div>
+          <div style="flex:1;min-width:120px;text-align:center;padding:10px">
+            <div style="font-size:28px;margin-bottom:6px">🏦</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary)">Cede</div>
+            <div style="font-size:11px;color:var(--text-secondary)">Via RADIAN Evento 037</div>
+          </div>
+          <div style="flex:0;display:flex;align-items:center;color:var(--brand);font-size:20px">→</div>
+          <div style="flex:1;min-width:120px;text-align:center;padding:10px">
+            <div style="font-size:28px;margin-bottom:6px">📊</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary)">Contabiliza</div>
+            <div style="font-size:11px;color:var(--text-secondary)">Automático con PUC</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 2 -->
+      <div id="wiz-2" style="display:none">
+        <div class="wiz-step-tag">Paso 2 de 4</div>
+        <div class="wiz-title">¿Qué es una cesión RADIAN?</div>
+        <div class="wiz-sub">RADIAN es el sistema de la DIAN que permite convertir facturas electrónicas en <strong>títulos valores negociables</strong> para cederlos a bancos o fondos de inversión.</div>
+        <div class="wiz-visual">
+          <div class="wiz-vstep">
+            <div class="wiz-vstep-num">1</div>
+            <div>
+              <div class="wiz-vstep-name">Registra la factura con su CUFE</div>
+              <div class="wiz-vstep-desc">El CUFE es el código único de 96 caracteres que la DIAN asigna a cada factura electrónica válida. Lo encuentras en el PDF o XML de tu factura.</div>
+            </div>
+          </div>
+          <div class="wiz-vstep">
+            <div class="wiz-vstep-num">2</div>
+            <div>
+              <div class="wiz-vstep-name">Habilítala como título valor</div>
+              <div class="wiz-vstep-desc">Este paso inscribe la factura en RADIAN como un instrumento negociable. Solo puede hacerse una vez por factura y requiere que esté validada por la DIAN.</div>
+            </div>
+          </div>
+          <div class="wiz-vstep">
+            <div class="wiz-vstep-num" style="background:#059669">3</div>
+            <div>
+              <div class="wiz-vstep-name">Cede el crédito — Evento 037</div>
+              <div class="wiz-vstep-desc">La plataforma genera el XML UBL 2.1, lo firma con SHA-384 y lo envía a RADIAN. La DIAN responde en menos de 2 segundos y la contabilidad se genera automáticamente.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 3 -->
+      <div id="wiz-3" style="display:none">
+        <div class="wiz-step-tag">Paso 3 de 4</div>
+        <div class="wiz-title">Registra tu primera factura</div>
+        <div class="wiz-sub">Crea una factura de ejemplo para explorar la plataforma. Puedes usar datos ficticios — no se envía nada a la DIAN en este momento.</div>
+        <div class="wiz-form">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="wfg">
+              <label>CUFE
+                <span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">Código Único de Factura Electrónica: 96 caracteres hexadecimales que la DIAN asigna a cada factura. En demo puedes poner cualquier texto de 96 caracteres.</span></span>
+              </label>
+              <input id="wiz-cufe" placeholder="ej: a1b2c3…(96 chars)" style="font-family:monospace;font-size:11px"/>
+              <div class="whint">En producción lo encuentras en el XML o PDF de tu factura</div>
+            </div>
+            <div class="wfg">
+              <label>Número de factura</label>
+              <input id="wiz-numero" placeholder="ej: 00001" value="00001"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="wfg">
+              <label>NIT Emisor
+                <span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">NIT de tu empresa (quien emite la factura). Formato: 900.123.456-1</span></span>
+              </label>
+              <input id="wiz-emisor-nit" placeholder="900.123.456-1"/>
+            </div>
+            <div class="wfg">
+              <label>Nombre Emisor</label>
+              <input id="wiz-emisor-nombre" placeholder="MI EMPRESA SAS"/>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="wfg">
+              <label>NIT Adquiriente
+                <span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">NIT de quien compró el bien o servicio (tu cliente). Es quien debe pagar la factura.</span></span>
+              </label>
+              <input id="wiz-adq-nit" placeholder="800.000.000-1"/>
+            </div>
+            <div class="wfg">
+              <label>Valor total (COP)</label>
+              <input id="wiz-valor" type="number" placeholder="120000000" value="120000000"/>
+            </div>
+          </div>
+          <div class="resp-box" id="wiz-resp" style="margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- PASO 4 -->
+      <div id="wiz-4" style="display:none">
+        <div class="wiz-step-tag">Paso 4 de 4</div>
+        <div class="wiz-title">¡Tu cuenta está lista! 🎉</div>
+        <div class="wiz-sub">Ya tienes todo configurado. Estos son tus próximos pasos para completar tu primera cesión real:</div>
+        <div class="wiz-checklist">
+          <div class="wiz-ci">
+            <div class="wiz-ci-icon">📄</div>
+            <div>
+              <div class="wiz-ci-label">Registrar una factura real con su CUFE</div>
+              <div class="wiz-ci-sub">Ve a Registrar Factura en el menú lateral</div>
+            </div>
+          </div>
+          <div class="wiz-ci">
+            <div class="wiz-ci-icon">🏅</div>
+            <div>
+              <div class="wiz-ci-label">Habilitarla como título valor</div>
+              <div class="wiz-ci-sub">Un clic desde la tabla de facturas</div>
+            </div>
+          </div>
+          <div class="wiz-ci">
+            <div class="wiz-ci-icon">⚡</div>
+            <div>
+              <div class="wiz-ci-label">Crear tu primera cesión RADIAN</div>
+              <div class="wiz-ci-sub">Ve a Nueva Cesión e ingresa el NIT del cesionario</div>
+            </div>
+          </div>
+          <div class="wiz-ci">
+            <div class="wiz-ci-icon">📊</div>
+            <div>
+              <div class="wiz-ci-label">Descargar tu primer reporte Excel</div>
+              <div class="wiz-ci-sub">Libro diario, cartera y estado de resultados</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end wiz-body -->
+    <div class="wiz-footer">
+      <div class="wiz-dots">
+        <div class="wiz-dot active" id="wd-0"></div>
+        <div class="wiz-dot" id="wd-1"></div>
+        <div class="wiz-dot" id="wd-2"></div>
+        <div class="wiz-dot" id="wd-3"></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="wiz-skip" id="wiz-skip-btn" onclick="wizSkip()">Saltar tutorial</span>
+        <button class="btn btn-ghost btn-sm" id="wiz-back-btn" onclick="wizBack()" style="display:none">← Atrás</button>
+        <button class="btn btn-primary btn-sm" id="wiz-next-btn" onclick="wizNext()">Empezar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL DETALLE FACTURA ══ -->
 <div class="modal-overlay" id="modal-detalle">
   <div class="modal">
@@ -1366,6 +1626,167 @@ const API = '';
 // Solo guardamos el CSRF token (leído de la cookie radian_csrf) y los datos
 // de usuario (no sensibles) en memoria de sesión.
 let USER_DATA = null;
+
+// ═══════════════════════════════════════════════════════════
+// ONBOARDING SYSTEM
+// ═══════════════════════════════════════════════════════════
+let OB_PROGRESS = { fact:false, titulo:false, cesion:false, reporte:false };
+let WIZ_STEP = 1;
+const WIZ_LABELS = ['Empezar →','Entendido, continuar →','Registrar factura demo','Ir al dashboard'];
+const WIZ_PCT   = ['25%','50%','75%','100%'];
+
+// ── WIZARD ──────────────────────────────────────────────────
+function wizShow() {
+  document.getElementById('wiz-overlay').classList.add('show');
+  wizGoto(1);
+}
+function wizHide() {
+  document.getElementById('wiz-overlay').classList.remove('show');
+}
+function wizSkip() {
+  wizHide();
+  saveOnboarding({is_new_user: false});
+}
+function wizGoto(n) {
+  WIZ_STEP = n;
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('wiz-'+i);
+    if(el) el.style.display = i===n ? '' : 'none';
+  });
+  [0,1,2,3].forEach(i => {
+    const d = document.getElementById('wd-'+i);
+    if(d) d.className = 'wiz-dot'+(i===n-1?' active':'');
+  });
+  document.getElementById('wiz-fill').style.width = WIZ_PCT[n-1];
+  document.getElementById('wiz-next-btn').textContent = WIZ_LABELS[n-1];
+  const back = document.getElementById('wiz-back-btn');
+  if(back) back.style.display = n>1 ? '' : 'none';
+  const skip = document.getElementById('wiz-skip-btn');
+  if(skip) skip.style.display = n===4 ? 'none' : '';
+  saveOnboarding({onboarding_step: n});
+}
+function wizBack() { if(WIZ_STEP > 1) wizGoto(WIZ_STEP-1); }
+async function wizNext() {
+  if(WIZ_STEP === 3) {
+    await wizRegisterDemo();
+    return;
+  }
+  if(WIZ_STEP === 4) {
+    wizHide();
+    saveOnboarding({is_new_user: false, onboarding_step: 4});
+    refreshChecklist();
+    return;
+  }
+  wizGoto(WIZ_STEP+1);
+}
+async function wizRegisterDemo() {
+  const cufe = document.getElementById('wiz-cufe').value.trim();
+  const numero = document.getElementById('wiz-numero').value.trim()||'00001';
+  const emisorNit = document.getElementById('wiz-emisor-nit').value.trim();
+  const emisorNom = document.getElementById('wiz-emisor-nombre').value.trim();
+  const adqNit = document.getElementById('wiz-adq-nit').value.trim();
+  const valor = parseFloat(document.getElementById('wiz-valor').value)||120000000;
+  const resp = document.getElementById('wiz-resp');
+
+  // Generar CUFE demo si está vacío
+  const cufeFinal = cufe || ('demo'+Array.from({length:90},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join(''));
+
+  const btn = document.getElementById('wiz-next-btn');
+  btn.disabled = true; btn.textContent = 'Registrando...';
+  resp.className = 'resp-box'; resp.innerHTML = '';
+
+  const now = new Date(); const future = new Date(now.getTime()+30*24*3600000);
+  const fmtDT = d => d.toISOString().slice(0,16);
+  try {
+    const body = {
+      cufe: cufeFinal, numero, prefijo:'FV-DEMO',
+      emisor_nit: emisorNit||'900.000.001-0', emisor_nombre: emisorNom||'MI EMPRESA DEMO SAS',
+      adquiriente_nit: adqNit||'800.000.001-0', adquiriente_nombre: 'CLIENTE DEMO SAS',
+      valor_base: Math.round(valor/1.19), valor_iva: valor - Math.round(valor/1.19), valor_total: valor,
+      fecha_emision: fmtDT(now), fecha_vencimiento: fmtDT(future),
+    };
+    const r = await apiFetch('/api/v1/facturas/registrar', {method:'POST', body:JSON.stringify(body)});
+    const d = await r.json();
+    if(r.ok) {
+      resp.className = 'resp-box show';
+      resp.innerHTML = '<div class="resp-ok">✅ Factura demo creada correctamente</div>';
+      OB_PROGRESS.fact = true;
+      refreshChecklist();
+      setTimeout(() => wizGoto(4), 1200);
+    } else {
+      resp.className = 'resp-box show';
+      resp.innerHTML = '<div class="resp-err">⚠ '+(d.detail||'Error al registrar')+'</div>';
+      btn.disabled=false; btn.textContent='Registrar factura demo';
+    }
+  } catch(e) {
+    resp.className='resp-box show'; resp.innerHTML='<div class="resp-err">❌ Error de conexión</div>';
+    btn.disabled=false; btn.textContent='Registrar factura demo';
+  }
+}
+
+// ── CHECKLIST ───────────────────────────────────────────────
+function refreshChecklist() {
+  const keys = ['fact','titulo','cesion','reporte'];
+  const done = keys.filter(k=>OB_PROGRESS[k]).length;
+  const pct = Math.round(done/keys.length*100);
+  document.getElementById('obw-pct').textContent = pct+'%';
+  document.getElementById('obw-bar').style.width = pct+'%';
+  keys.forEach((k,i) => {
+    const el = document.getElementById('ob-'+i);
+    if(el) el.classList.toggle('done', !!OB_PROGRESS[k]);
+  });
+  // Ocultar widget si 100%
+  if(pct === 100) {
+    setTimeout(()=>{ const w=document.getElementById('obw-widget'); if(w) w.style.display='none'; }, 1500);
+  }
+}
+function dismissChecklist() {
+  const w = document.getElementById('obw-widget');
+  if(w) w.style.display = 'none';
+  saveOnboarding({onboarding_progress: -1});
+}
+async function loadOnboardingProgress() {
+  // Derive from existing API data
+  try {
+    const [rf, rc] = await Promise.all([
+      apiFetch('/api/v1/facturas/?limit=5').then(r=>r.json()).catch(()=>({facturas:[]})),
+      apiFetch('/api/v1/cesion/?limit=5').then(r=>r.json()).catch(()=>({cesiones:[]})),
+    ]);
+    const fs = rf.facturas||[];
+    const cs = rc.cesiones||[];
+    OB_PROGRESS.fact    = fs.length > 0;
+    OB_PROGRESS.titulo  = fs.some(f=>f.es_titulo_valor);
+    OB_PROGRESS.cesion  = cs.length > 0;
+    // reporte: check from user data
+    OB_PROGRESS.reporte = USER_DATA?.onboarding_progress >= 75 || false;
+    refreshChecklist();
+    // Show/hide widget based on user flag
+    const isNew = USER_DATA?.is_new_user !== false;
+    const prog  = USER_DATA?.onboarding_progress;
+    const w = document.getElementById('obw-widget');
+    if(w && (prog===-1)) w.style.display='none';
+  } catch(e) {}
+}
+
+// ── SAVE ONBOARDING TO BACKEND ──────────────────────────────
+async function saveOnboarding(data) {
+  try {
+    await apiFetch('/api/v1/auth/onboarding', {method:'PUT', body:JSON.stringify(data)});
+  } catch(e) {}
+}
+
+// ── INIT ONBOARDING ─────────────────────────────────────────
+async function initOnboarding() {
+  await loadUserInfo();
+  await loadOnboardingProgress();
+  const isNew = USER_DATA?.is_new_user;
+  // Show wizard if new user (is_new_user is true or undefined/null from old accounts)
+  if(isNew === true || isNew === undefined || isNew === null) {
+    const savedStep = USER_DATA?.onboarding_step;
+    // Small delay so app loads first
+    setTimeout(() => { wizShow(); if(savedStep>1) wizGoto(savedStep); }, 600);
+  }
+}
 
 function getCsrfToken() {
   // Lee la cookie radian_csrf (no httpOnly, accesible por JS para double-submit)
@@ -1470,6 +1891,7 @@ function showErr(el, txtEl, msg){ if(txtEl) txtEl.textContent=msg; el.classList.
 function showApp() {
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='block';
+  initOnboarding();
   loadDashboard();
 }
 
@@ -1515,7 +1937,6 @@ async function loadUserInfo() {
 }
 
 async function loadDashboard() {
-  loadUserInfo();
   checkApiStatus();
   // Load cesiones KPIs for dashboard
   apiFetch('/api/v1/cesion/?limit=500').then(r=>r.json()).then(d=>{
@@ -1535,7 +1956,7 @@ async function loadDashboard() {
     document.getElementById('st-proceso').textContent=fs.filter(f=>f.estado==='EN_CESION').length;
     const tbody=document.getElementById('dash-facturas');
     if(!fs.length){
-      tbody.innerHTML='<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No hay facturas registradas</div><div class="empty-sub">Comienza registrando tu primera factura electrónica</div></div></td></tr>';
+      tbody.innerHTML='<tr><td colspan="4"><div class="empty-hero"><div class="empty-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;color:var(--brand)"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="empty-hero-title">No has registrado facturas aún</div><div class="empty-hero-sub">Comienza ingresando el CUFE de tu primera factura electrónica emitida por la DIAN</div><button class="btn btn-primary btn-sm" onclick="showPage(\'registrar\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px"><path d="M12 4v16m8-8H4"/></svg>Registrar primera factura</button></div></td></tr>';
       return;
     }
     tbody.innerHTML=fs.slice(0,6).map(f=>`
@@ -1630,7 +2051,7 @@ async function quickHabilitar(cufe) {
   try {
     const r=await apiFetch('/api/v1/facturas/'+cufe+'/habilitar-cesion',{method:'PUT'});
     const d=await r.json();
-    if(r.ok){ toast('Factura habilitada como título valor','ok'); loadFacturas(); closeModal('modal-detalle'); }
+    if(r.ok){ toast('Factura habilitada como título valor','ok'); loadFacturas(); closeModal('modal-detalle'); OB_PROGRESS.titulo=true; refreshChecklist(); }
     else toast(d.detail||'Error al habilitar','err');
   }catch(e){ toast('Error de conexión','err'); }
 }
@@ -1657,7 +2078,7 @@ async function registrarFactura() {
     box.className='resp-box show';
     if(r.ok){
       box.innerHTML='<div class="resp-ok">✅ '+d.mensaje+'</div><div class="resp-data">'+JSON.stringify(d,null,2)+'</div>';
-      toast('Factura registrada exitosamente','ok');
+      toast('Factura registrada exitosamente','ok'); OB_PROGRESS.fact=true; refreshChecklist();
     } else {
       box.innerHTML='<div class="resp-err">❌ '+(d.detail||JSON.stringify(d))+'</div>';
     }
@@ -1696,7 +2117,7 @@ async function ceder() {
     box.className='resp-box show';
     if(r.ok){
       box.innerHTML='<div class="resp-ok">✅ '+d.mensaje+'</div><div class="resp-data">'+JSON.stringify(d,null,2)+'</div>';
-      toast('Cesión registrada en RADIAN','ok');
+      toast('Cesión registrada en RADIAN','ok'); OB_PROGRESS.cesion=true; refreshChecklist();
     } else {
       box.innerHTML='<div class="resp-err">❌ '+(d.detail||JSON.stringify(d))+'</div>';
     }
@@ -1769,7 +2190,7 @@ function renderCesiones(filtro='') {
   document.getElementById('ces-count').textContent = '('+ces.length+')';
   const tbody = document.getElementById('cesiones-body');
   if(!ces.length) {
-    tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No hay cesiones registradas</div><div class="empty-sub"><a style="color:var(--brand);cursor:pointer" onclick="showPage(\'cesion\')">Crear primera cesión</a></div></div></td></tr>';
+    tbody.innerHTML='<tr><td colspan="8"><div class="empty-hero"><div class="empty-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;color:var(--brand)"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><div class="empty-hero-title">No has creado cesiones aún</div><div class="empty-hero-sub">Una cesión transfiere el derecho de cobro de una factura a un banco o fondo de inversión via RADIAN Evento 037. La factura debe estar habilitada como título valor primero.</div><button class="btn btn-primary btn-sm" onclick="showPage(\'cesion\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Crear mi primera cesión</button></div></td></tr>';
     return;
   }
   tbody.innerHTML = ces.map(c => `
@@ -1799,7 +2220,7 @@ function descargarXml(cude) {
 function descargarReporte(tipo) {
   const btn = event && event.target ? event.target.closest('button') : null;
   if(btn){ const orig=btn.innerHTML; btn.innerHTML='<span class="spinner"></span> Generando...'; btn.disabled=true; setTimeout(()=>{btn.innerHTML=orig;btn.disabled=false;},4000); }
-  toast('Generando reporte Excel...', 'info');
+  toast('Generando reporte Excel...', 'info'); OB_PROGRESS.reporte=true; refreshChecklist(); saveOnboarding({onboarding_progress:75});
   const url = API+'/api/v1/reportes/'+tipo;
   const a = document.createElement('a');
   a.href = url;

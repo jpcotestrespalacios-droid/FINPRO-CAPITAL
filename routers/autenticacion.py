@@ -187,6 +187,12 @@ class Token(BaseModel):
     token_type: str
 
 
+class OnboardingUpdate(BaseModel):
+    is_new_user: Optional[bool] = None
+    onboarding_step: Optional[int] = None
+    onboarding_progress: Optional[int] = None
+
+
 # ── ENDPOINTS ──────────────────────────────────────────────────────────────────
 @router.post("/registro", summary="Registrar nueva empresa")
 async def registrar(usuario: UsuarioCreate, request: Request):
@@ -253,4 +259,24 @@ async def me(current_user: dict = Depends(get_current_user)):
         "nombre": current_user["nombre"],
         "nit": current_user["nit"],
         "telefono": current_user.get("telefono"),
+        "is_new_user": current_user.get("is_new_user", True),
+        "onboarding_step": current_user.get("onboarding_step", 1),
+        "onboarding_progress": current_user.get("onboarding_progress", 0),
     }
+
+
+@router.put("/onboarding", summary="Actualizar estado de onboarding del usuario")
+async def update_onboarding(
+    data: OnboardingUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    update_data = {}
+    if data.is_new_user is not None:
+        update_data["is_new_user"] = data.is_new_user
+    if data.onboarding_step is not None:
+        update_data["onboarding_step"] = data.onboarding_step
+    if data.onboarding_progress is not None:
+        update_data["onboarding_progress"] = data.onboarding_progress
+    if update_data:
+        get_sb().table("usuarios").update(update_data).eq("id", current_user["id"]).execute()
+    return {"ok": True}
