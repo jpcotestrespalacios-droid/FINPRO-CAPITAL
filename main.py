@@ -478,25 +478,114 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 /* ─── CESIONES LIST ─── */
 .ces-estado-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700}
 
-/* ─── RESPONSIVE ─── */
-@media(max-width:900px){
+/* ─── HAMBURGER BUTTON (hidden on desktop) ─── */
+.mob-hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:transparent;cursor:pointer;flex-shrink:0;margin-right:12px;transition:.15s}
+.mob-hamburger:hover{background:var(--bg);border-color:var(--brand)}
+.mob-hamburger span{display:block;width:18px;height:1.5px;background:var(--text-secondary);border-radius:2px;margin:3px auto;transition:.25s}
+
+/* ─── DRAWER OVERLAY ─── */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:250;backdrop-filter:blur(2px)}
+.drawer-overlay.show{display:block}
+
+/* ─── BOTTOM NAV (hidden on desktop) ─── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--surface);border-top:1px solid var(--border);z-index:200;box-shadow:0 -4px 20px rgba(13,27,46,.07)}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);cursor:pointer;transition:.15s;border:none;background:transparent;font-family:var(--font);padding:6px 2px;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.bn-item svg{width:20px;height:20px;flex-shrink:0;transition:.15s}
+.bn-item.active,.bn-item:hover{color:var(--brand)}
+.bn-item.active svg,.bn-item:hover svg{color:var(--brand)}
+
+/* ─── TABLE → CARD RESPONSIVE ─── */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ─── CUFE TEXTAREA ─── */
+.cufe-ta{font-family:monospace;font-size:12px;resize:vertical;min-height:52px;line-height:1.5;word-break:break-all}
+
+/* ─── RESPONSIVE: ≤1024px tablet ─── */
+@media(max-width:1024px){
+  .sidebar{width:220px}
+  .main{margin-left:220px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .form-row-3{grid-template-columns:1fr 1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ─── RESPONSIVE: ≤768px mobile/tablet ─── */
+@media(max-width:768px){
+  /* ── Auth ── */
   .auth-left{display:none}
-  .auth-right{width:100%}
+  .auth-right{width:100%;padding:32px 24px;min-height:100vh}
+
+  /* ── Sidebar → drawer ── */
+  .sidebar{transform:translateX(-260px);width:260px;transition:.28s cubic-bezier(.4,0,.2,1);z-index:300;box-shadow:none}
+  .sidebar.drawer-open{transform:translateX(0);box-shadow:8px 0 60px rgba(0,0,0,.35)}
+  .main{margin-left:0}
+  .topbar{padding:0 14px;position:sticky;top:0;z-index:100}
+  .mob-hamburger{display:flex!important}
+
+  /* ── Bottom nav visible ── */
+  .bottom-nav{display:flex!important}
+  .content{padding:16px 14px 74px}/* leave room for bottom nav */
+
+  /* ── Layouts ── */
   .stats-grid{grid-template-columns:1fr 1fr}
   .grid-2,.grid-2-eq{grid-template-columns:1fr}
-  .form-row,.form-row-3{grid-template-columns:1fr}
+  .form-row,.form-row-3{grid-template-columns:1fr!important}
   .aging-grid{grid-template-columns:1fr 1fr}
   .kpi-grid{grid-template-columns:1fr 1fr}
+  .grid-col{gap:14px}
+
+  /* ── Cards ── */
+  .card-body{padding:14px}
+  .card-head{padding:12px 14px}
+
+  /* ── Topbar right buttons ── */
+  .topbar-right .btn span,.topbar-right .btn-ghost{display:none}
+  .topbar-right .btn-primary{padding:8px 14px;font-size:12px}
+
+  /* ── Tables → cards on mobile ── */
+  table.tbl-mobile{display:block}
+  table.tbl-mobile thead{display:none}
+  table.tbl-mobile tbody{display:flex;flex-direction:column;gap:10px}
+  table.tbl-mobile tbody tr{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;
+    background:var(--surface);border-radius:var(--radius-lg);
+    border:1px solid var(--border);padding:14px 16px;
+    box-shadow:var(--shadow);cursor:pointer
+  }
+  table.tbl-mobile tbody td{
+    display:flex;flex-direction:column;padding:0;
+    border:none!important;font-size:13px;vertical-align:top
+  }
+  table.tbl-mobile tbody td::before{
+    content:attr(data-label);font-size:9px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.8px;
+    color:var(--text-muted);margin-bottom:3px;display:block
+  }
+  table.tbl-mobile tbody td[data-full]{grid-column:1/-1}
+  table.tbl-mobile tbody td[data-full]::before{display:none}
+  /* action cells full-width, no label, row direction */
+  table.tbl-mobile tbody td.td-actions{
+    grid-column:1/-1;flex-direction:row;gap:8px;
+    align-items:center;padding-top:8px;
+    border-top:1px solid var(--border-soft)!important;margin-top:4px
+  }
+  table.tbl-mobile tbody td.td-actions::before{display:none}
+
+  /* ── iOS zoom prevention ── */
+  input,select,textarea{font-size:16px!important}
+  .fg input,.fg select,.fg textarea{font-size:16px!important}
 }
-@media(max-width:640px){
+
+/* ─── RESPONSIVE: ≤480px small mobile ─── */
+@media(max-width:480px){
   .stats-grid{grid-template-columns:1fr}
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .main{margin-left:0}
-  .content{padding:16px}
-  .topbar{padding:0 16px}
-  .aging-grid{grid-template-columns:1fr}
+  .auth-right{padding:24px 16px}
   .kpi-grid{grid-template-columns:1fr}
+  .aging-grid{grid-template-columns:1fr}
+  table.tbl-mobile tbody tr{grid-template-columns:1fr}
+  table.tbl-mobile tbody td[data-full]{grid-column:1}
+  .wiz-box{max-height:95vh;overflow-y:auto}
+  .topbar-right .btn-primary{display:none}/* only hamburger + title on tiny screens */
 }
 </style>
 </head>
@@ -668,10 +757,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 
 <!-- MAIN -->
 <div class="main">
+  <!-- DRAWER OVERLAY -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="page-title" id="page-title">Dashboard</div>
-      <div class="page-subtitle" id="page-sub">Resumen general</div>
+    <div class="topbar-left" style="display:flex;align-items:center">
+      <button class="mob-hamburger" onclick="openDrawer()" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="page-subtitle" id="page-sub">Resumen general</div>
+      </div>
     </div>
     <div class="topbar-right">
       <button class="btn btn-ghost btn-sm" onclick="showPage('registrar')">
@@ -847,10 +944,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
             Registrar nueva
           </button>
         </div>
-        <table class="tbl">
+        <div class="tbl-scroll">
+        <table class="tbl tbl-mobile">
           <thead><tr><th>Número / CUFE</th><th>Adquiriente</th><th>Valor Total</th><th>Vencimiento</th><th>Estado</th><th style="text-align:center">Acciones</th></tr></thead>
           <tbody id="facturas-body"><tr><td colspan="6"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando facturas...</div></div></td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -869,7 +968,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
           </div>
           <div class="card-body">
             <div class="section-label">Identificación</div>
-            <div class="fg"><label>CUFE <span style="color:var(--red)">*</span><span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">El CUFE es el código único de 96 caracteres hexadecimales que identifica tu factura electrónica. Lo encuentras en el PDF de tu factura o en el portal de tu proveedor de facturación electrónica (campo &lt;cbc:UUID&gt; en el XML).</span></span></label><input id="reg-cufe" placeholder="Código Único de Factura Electrónica (96 chars)" style="font-family:monospace;font-size:12px"/></div>
+            <div class="fg"><label>CUFE <span style="color:var(--red)">*</span><span class="tip"><button class="tip-btn" tabindex="-1">?</button><span class="tip-box">El CUFE es el código único de 96 caracteres hexadecimales que identifica tu factura electrónica. Lo encuentras en el PDF de tu factura o en el portal de tu proveedor de facturación electrónica (campo &lt;cbc:UUID&gt; en el XML).</span></span></label><textarea id="reg-cufe" class="cufe-ta" placeholder="Pega aquí el CUFE de 96 caracteres hexadecimales" rows="2"></textarea></div>
             <div class="form-row">
               <div class="fg"><label>Número de factura <span style="color:var(--red)">*</span></label><input id="reg-numero" placeholder="00001"/></div>
               <div class="fg"><label>Prefijo</label><input id="reg-prefijo" placeholder="FV" value="FV"/></div>
@@ -1216,7 +1315,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
             Nueva cesión
           </button>
         </div>
-        <table class="tbl">
+        <div class="tbl-scroll">
+        <table class="tbl tbl-mobile">
           <thead>
             <tr>
               <th>Número / CUDE</th>
@@ -1233,6 +1333,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
             <tr><td colspan="8"><div class="empty-state" style="padding:32px"><div class="empty-text">Cargando cesiones...</div></div></td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -1442,6 +1543,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 </div><!-- end main -->
 </div><!-- end layout -->
 </div><!-- end app-screen -->
+
+<!-- ══ BOTTOM NAV (mobile) ══ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <a class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a class="bn-item" id="bn-facturas" onclick="showPage('facturas')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    Facturas
+  </a>
+  <a class="bn-item" id="bn-cesion" onclick="showPage('cesion')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    Ceder
+  </a>
+  <a class="bn-item" id="bn-cartera" onclick="showPage('cartera')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18M10 18H3M10 6H3"/></svg>
+    Cartera
+  </a>
+  <a class="bn-item" id="bn-reportes" onclick="showPage('reportes')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Reportes
+  </a>
+</nav>
 
 <!-- ══ WIZARD ONBOARDING ══ -->
 <div class="wiz-overlay" id="wiz-overlay">
@@ -1987,17 +2112,15 @@ async function loadFacturas(estado='') {
     }
     tbody.innerHTML=fs.map(f=>`
       <tr>
-        <td><div class="td-primary">${f.prefijo||'FV'}-${f.numero}</div><div class="td-mono">${(f.cufe||'').substring(0,22)}…</div></td>
-        <td style="font-size:12px">${f.adquiriente_nombre||'—'}<div class="td-mono">${f.adquiriente_nit||''}</div></td>
-        <td><div class="td-amount">$${fmtNum(f.valor_total)}</div></td>
-        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(f.fecha_vencimiento)}</td>
-        <td>${badgeEstado(f.estado)}</td>
-        <td style="text-align:center">
-          <div style="display:flex;gap:6px;justify-content:center">
+        <td data-label="Factura"><div class="td-primary">${f.prefijo||'FV'}-${f.numero}</div><div class="td-mono" style="display:flex;align-items:center;gap:4px">${(f.cufe||'').substring(0,16)}… <button onclick="event.stopPropagation();navigator.clipboard.writeText('${f.cufe||''}');toast('CUFE copiado','ok')" style="background:none;border:none;cursor:pointer;color:var(--brand);font-size:10px;padding:1px 4px" title="Copiar CUFE">⧉</button></div></td>
+        <td data-label="Adquiriente" style="font-size:12px">${f.adquiriente_nombre||'—'}<div class="td-mono">${f.adquiriente_nit||''}</div></td>
+        <td data-label="Valor"><div class="td-amount">$${fmtNum(f.valor_total)}</div></td>
+        <td data-label="Vencimiento" style="font-size:12px;color:var(--text-muted)">${fmtDate(f.fecha_vencimiento)}</td>
+        <td data-label="Estado">${badgeEstado(f.estado)}</td>
+        <td class="td-actions">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-ghost btn-sm" onclick="verDetalle('${f.cufe}')">Ver</button>
-            ${f.es_titulo_valor&&f.estado!=='CEDIDA'?`<button class="btn btn-primary btn-sm" onclick="irCeder('${f.cufe}')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              Ceder</button>`:''}
+            ${f.es_titulo_valor&&f.estado!=='CEDIDA'?`<button class="btn btn-primary btn-sm" onclick="irCeder('${f.cufe}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Ceder</button>`:''}
             ${!f.es_titulo_valor?`<button class="btn btn-success btn-sm" onclick="quickHabilitar('${f.cufe}')">Habilitar</button>`:''}
           </div>
         </td>
@@ -2195,14 +2318,14 @@ function renderCesiones(filtro='') {
   }
   tbody.innerHTML = ces.map(c => `
     <tr>
-      <td><div class="td-primary" style="font-size:12px">${c.numero_cesion||'—'}</div><div class="td-mono">${(c.cude||'').substring(0,14)}…</div></td>
-      <td><div class="td-mono">${(c.cufe_factura||'').substring(0,16)}…</div></td>
-      <td style="font-size:12px">${c.cedente_nombre||'—'}<div class="td-mono">${c.cedente_nit||''}</div></td>
-      <td style="font-size:12px">${c.cesionario_nombre||'—'}<div class="td-mono">${c.cesionario_nit||''}</div></td>
-      <td><div class="td-amount">$${fmtNum(c.valor_cesion)}</div></td>
-      <td style="font-size:12px;color:var(--text-muted)">${fmtDate(c.fecha_cesion)}</td>
-      <td>${badgeCesion(c.estado)}</td>
-      <td style="text-align:center"><button class="btn btn-ghost btn-sm" onclick="descargarXml('${c.cude}')">
+      <td data-label="Cesión"><div class="td-primary" style="font-size:12px">${c.numero_cesion||'—'}</div><div class="td-mono">${(c.cude||'').substring(0,14)}…</div></td>
+      <td data-label="Factura CUFE"><div class="td-mono">${(c.cufe_factura||'').substring(0,16)}…</div></td>
+      <td data-label="Cedente" style="font-size:12px">${c.cedente_nombre||'—'}<div class="td-mono">${c.cedente_nit||''}</div></td>
+      <td data-label="Cesionario" style="font-size:12px">${c.cesionario_nombre||'—'}<div class="td-mono">${c.cesionario_nit||''}</div></td>
+      <td data-label="Valor"><div class="td-amount">$${fmtNum(c.valor_cesion)}</div></td>
+      <td data-label="Fecha" style="font-size:12px;color:var(--text-muted)">${fmtDate(c.fecha_cesion)}</td>
+      <td data-label="Estado">${badgeCesion(c.estado)}</td>
+      <td class="td-actions"><button class="btn btn-ghost btn-sm" onclick="descargarXml('${c.cude}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
         XML</button></td>
     </tr>`).join('');
@@ -2466,11 +2589,34 @@ async function loadResultados() {
   }
 }
 
+// ── MOBILE DRAWER ──────────────────────────────────────────
+function openDrawer() {
+  document.getElementById('sidebar').classList.add('drawer-open');
+  document.getElementById('drawer-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('sidebar').classList.remove('drawer-open');
+  document.getElementById('drawer-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ── BOTTOM NAV SYNC ─────────────────────────────────────────
+const BN_PAGES = ['dashboard','facturas','cesion','cartera','reportes'];
+function syncBottomNav(p) {
+  BN_PAGES.forEach(pg => {
+    const el = document.getElementById('bn-'+pg);
+    if(el) el.classList.toggle('active', pg===p);
+  });
+}
+
 function showPage(p) {
+  closeDrawer();
   document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   const el=document.getElementById('page-'+p); if(el) el.classList.add('active');
   const nav=document.getElementById('nav-'+p); if(nav) nav.classList.add('active');
+  syncBottomNav(p);
   const titles={
     dashboard:['Dashboard','Resumen general del sistema RADIAN'],
     facturas:['Facturas','Gestión de facturas electrónicas endosables'],
