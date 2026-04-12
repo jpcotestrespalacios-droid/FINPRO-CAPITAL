@@ -2170,14 +2170,7 @@ body{font-family:var(--font);background:#fff;color:var(--text);-webkit-font-smoo
 .hero-trust{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.5px}
 .hero-trust svg{width:14px;opacity:.4}
 .hero-trust-dot{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.25)}
-/* Floating cards in hero */
-.hero-floats{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.float-card{position:absolute;background:rgba(255,255,255,.07);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 18px;font-size:12px;color:rgba(255,255,255,.8);font-weight:500;animation:float 6s ease-in-out infinite}
-.float-card:nth-child(1){top:22%;right:4%;animation-delay:0s}
-.float-card:nth-child(2){bottom:28%;right:4%;animation-delay:2s}
-.float-card:nth-child(3){top:35%;left:2%;animation-delay:4s}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@media(max-width:900px){.float-card{display:none}}
+/* Floating cards removed */
 
 /* ── STATS BAR ── */
 .stats-bar{background:#fff;border-bottom:1px solid var(--border);padding:40px 5%}
@@ -2377,23 +2370,6 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
 
 <!-- ══ HERO ══ -->
 <section class="hero" id="hero">
-  <div class="hero-floats">
-    <div class="float-card">
-      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Cesión aceptada</div>
-      <div style="font-size:13px;font-weight:700;color:#34D399">✓ RADIAN • Evento 037</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">$120.000.000 COP</div>
-    </div>
-    <div class="float-card">
-      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">PUC generado</div>
-      <div style="font-size:12px;font-weight:700;color:#5EAEFF">1305 · Deudores</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">4135 · Ingresos</div>
-    </div>
-    <div class="float-card">
-      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">API · Respuesta DIAN</div>
-      <div style="font-size:12px;font-weight:700;color:#5EAEFF">Evento 037 enviado</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">CUDE: sha384_abc…f9</div>
-    </div>
-  </div>
   <div class="hero-badge">
     <span></span>
     Integrado con DIAN &nbsp;·&nbsp; RADIAN &nbsp;·&nbsp; Facturación Electrónica
