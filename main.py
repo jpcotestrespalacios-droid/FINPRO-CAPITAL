@@ -2916,7 +2916,6 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
     <li><a href="#como-funciona">Cómo funciona</a></li>
     <li><a href="#precios">Precios</a></li>
     <li><a href="#faq">FAQ</a></li>
-    <li><a href="/openapi.json" target="_blank">API Docs</a></li>
   </ul>
   <div class="nav-actions">
     <a href="/app" class="btn btn-ghost" style="font-size:13px">Iniciar sesión</a>
@@ -2931,7 +2930,6 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
   <a href="#como-funciona" onclick="closeMenu()">Cómo funciona</a>
   <a href="#precios" onclick="closeMenu()">Precios</a>
   <a href="#faq" onclick="closeMenu()">FAQ</a>
-  <a href="/openapi.json" target="_blank">API Docs</a>
   <a href="/app" style="color:var(--brand);font-weight:700">Iniciar sesión →</a>
 </div>
 
@@ -3245,7 +3243,6 @@ footer{background:var(--sidebar);padding:60px 5% 32px;color:rgba(255,255,255,.5)
         <ul>
           <li><a href="#caracteristicas">Características</a></li>
           <li><a href="#precios">Precios</a></li>
-          <li><a href="/openapi.json" target="_blank">API Docs</a></li>
           <li><a href="#faq">FAQ</a></li>
         </ul>
       </div>
