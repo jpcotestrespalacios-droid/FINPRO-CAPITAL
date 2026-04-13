@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     CERT_PATH: str = "./certs/certificado.p12"
     CERT_PASSWORD: str = "password-certificado"
 
+    # Email — Resend (resend.com — 3 000 emails/mes gratis)
+    # Obtener en: https://resend.com/api-keys
+    RESEND_API_KEY: str = ""
+
+    # Cron jobs — clave para proteger los endpoints /api/v1/notificaciones/cron/*
+    # Generar con: python -c "import secrets; print(secrets.token_hex(32))"
+    CRON_API_KEY: str = ""
+
     # NIT empresa
     NIT_EMPRESA: str = "900000000"
     RAZON_SOCIAL: str = "TU EMPRESA SAS"
@@ -48,6 +56,13 @@ class Settings(BaseSettings):
 
     # Clave técnica para cálculo del CUDE (asignada por la DIAN al registrar el software)
     CLAVE_TECNICA_DIAN: str = "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"
+
+    # Wompi — pasarela de pagos Colombia (https://wompi.com)
+    # Obtener en: https://dashboard.wompi.co → Desarrolladores → Llaves API
+    WOMPI_PUBLIC_KEY: str = ""   # pub_test_... o pub_prod_...
+    WOMPI_PRIVATE_KEY: str = ""  # prv_test_... o prv_prod_...
+    WOMPI_INTEGRITY_KEY: str = "" # Para firmar transacciones
+    WOMPI_EVENTS_KEY: str = ""    # Para verificar webhooks
 
     class Config:
         env_file = ".env"

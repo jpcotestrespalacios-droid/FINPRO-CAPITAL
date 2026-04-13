@@ -23,6 +23,7 @@ from pydantic import BaseModel
 
 from supabase_db import get_sb
 from config import settings
+from notifications import email_bienvenida
 
 router = APIRouter()
 
@@ -214,6 +215,7 @@ async def registrar(usuario: UsuarioCreate, request: Request):
         "hashed_password": hash_password(usuario.password),
         "activo": True,
     }).execute()
+    email_bienvenida(usuario.nombre, usuario.email)   # falla silenciosamente si Resend no está configurado
     return {"mensaje": "Usuario registrado exitosamente", "email": usuario.email}
 
 

@@ -1,3 +1,5 @@
+import json
+import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -7,6 +9,9 @@ from typing import Optional
 from supabase_db import get_sb
 from services.dian_radian import dian_service
 from routers.autenticacion import get_current_user
+from notifications import email_cesion_aceptada, email_cesion_rechazada
+from routers.notificaciones import get_user_pref
+from routers.pagos import verificar_limite_cesiones, incrementar_uso_cesion
 
 router = APIRouter()
 
@@ -36,9 +41,18 @@ async def crear_cesion(data: CesionRequest, current_user: dict = Depends(get_cur
         raise HTTPException(400, "Esta factura ya fue cedida")
     if factura["estado"] == "PAGADA":
         raise HTTPException(400, "Esta factura ya fue pagada, no se puede ceder")
+    if data.valor_cesion <= 0:
+        raise HTTPException(400, "El valor de cesión debe ser mayor a cero")
+    if data.valor_cesion > factura["valor_total"]:
+        raise HTTPException(400, f"El valor de cesión ({data.valor_cesion}) no puede exceder el valor total de la factura ({factura['valor_total']})")
 
-    total = sb.table("cesiones").select("id", count="exact").execute().count or 0
-    numero_cesion = f"CES{datetime.now().year}{str(total + 1).zfill(8)}"
+    # Verificar límite de cesiones del plan
+    limite = verificar_limite_cesiones(sb, current_user["id"])
+    if not limite["puede_ceder"]:
+        raise HTTPException(429, f"Límite de cesiones alcanzado ({limite['usadas']}/{limite['limite']}) para el plan {limite['plan']}. Actualiza tu plan en /api/v1/pagos/planes")
+
+    # Número de cesión único basado en UUID para evitar race conditions en concurrencia
+    numero_cesion = f"CES{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
     fecha_cesion = datetime.now()
 
     xml_evento, cude = dian_service.construir_xml_cesion(
@@ -72,13 +86,83 @@ async def crear_cesion(data: CesionRequest, current_user: dict = Depends(get_cur
         "numero_cesion": numero_cesion,
         "fecha_cesion": fecha_cesion.isoformat(),
         "xml_evento": xml_firmado,
-        "xml_respuesta_dian": str(respuesta_dian),
+        "xml_respuesta_dian": json.dumps(respuesta_dian, default=str),
         "estado": estado_cesion,
         "descripcion_estado": respuesta_dian.get("descripcion", ""),
     }).execute()
 
     if respuesta_dian["exitoso"]:
         sb.table("facturas").update({"estado": "CEDIDA"}).eq("cufe", data.cufe_factura).execute()
+        incrementar_uso_cesion(sb, current_user["id"])
+
+        # Auto-notificar al deudor (Ley 1231/2008) — no bloquea el flujo
+        try:
+            import secrets
+            token_deudor = secrets.token_urlsafe(32)
+            url_base = f"https://{factura.get('emisor_nit', 'app')}.finprocapital.co"
+            sb.table("notificaciones_deudor").insert({
+                "cude": cude,
+                "deudor_nit": factura["adquiriente_nit"],
+                "deudor_email": factura.get("adquiriente_email", ""),
+                "estado": "ENVIADA" if factura.get("adquiriente_email") else "FALLIDA",
+                "token_confirmacion": token_deudor,
+                "enviado_en": fecha_cesion.isoformat(),
+            }).execute()
+
+            if factura.get("adquiriente_email"):
+                from notifications import send_email
+                import html as _html
+                url_confirmar = f"{url_base}/api/v1/deudor/confirmar/{token_deudor}"
+                send_email(
+                    factura["adquiriente_email"],
+                    f"Notificación legal de cesión — {_html.escape(factura['emisor_nombre'])}",
+                    f"""<div style="font-family:-apple-system,Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                    <div style="background:#0B1829;padding:20px;border-radius:10px 10px 0 0">
+                      <h2 style="color:#fff;margin:0;font-size:17px">⚡ FinPro Capital — Notificación Legal</h2>
+                    </div>
+                    <div style="background:#fff;padding:28px;border:1px solid #E4E9F0;border-top:none">
+                      <div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:20px">
+                        <strong style="color:#92400E">⚠ Aviso legal — Ley 1231 de 2008</strong>
+                      </div>
+                      <p style="color:#374151">Estimado/a <strong>{_html.escape(factura['adquiriente_nombre'])}</strong>,</p>
+                      <p style="color:#374151;font-size:14px"><strong>{_html.escape(factura['emisor_nombre'])}</strong>
+                        ha cedido en RADIAN el crédito de la factura a
+                        <strong>{_html.escape(data.cesionario_nombre)}</strong>.</p>
+                      <p style="color:#374151;font-size:14px">
+                        A partir de ahora, los pagos deben realizarse únicamente a
+                        <strong>{_html.escape(data.cesionario_nombre)}</strong>.
+                      </p>
+                      <div style="text-align:center;margin:28px 0">
+                        <a href="{url_confirmar}"
+                           style="background:#1A4FD6;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;display:inline-block">
+                          ✓ Confirmar recepción
+                        </a>
+                      </div>
+                    </div>
+                    </div>""",
+                )
+        except Exception as _e:
+            print(f"[cesion] Aviso auto-notificacion deudor: {_e}")
+
+    # Enviar email de notificación (no bloquea el flujo)
+    try:
+        pref_key = "notify_cesion_aceptada" if respuesta_dian["exitoso"] else "notify_cesion_rechazada"
+        if get_user_pref(sb, current_user["id"], pref_key):
+            factura_num = f"{factura.get('prefijo', 'FV')}-{factura.get('numero', '')}"
+            if respuesta_dian["exitoso"]:
+                email_cesion_aceptada(
+                    current_user["email"], current_user["nombre"],
+                    cude, data.valor_cesion,
+                    factura["emisor_nombre"], data.cesionario_nombre, factura_num,
+                )
+            else:
+                email_cesion_rechazada(
+                    current_user["email"], current_user["nombre"],
+                    cude, data.valor_cesion,
+                    respuesta_dian.get("descripcion", ""), factura_num,
+                )
+    except Exception:
+        pass  # no interrumpir el flujo principal
 
     nueva = result.data[0] if result.data else {}
     return {

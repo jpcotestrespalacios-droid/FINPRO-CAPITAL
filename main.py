@@ -1,12 +1,170 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from contextlib import asynccontextmanager
+import os
 import uvicorn
 
-from routers import facturas, cesion, autenticacion, consultas, reportes
+from routers import facturas, cesion, autenticacion, consultas, reportes, notificaciones, deudor, organizaciones, pagos
 from config import settings
 
-app = FastAPI(title="RADIAN API", version="1.0.0", docs_url=None, redoc_url=None)
+
+# ── AUTO-MIGRACIÓN ───────────────────────────────────────────────────────────
+def _run_migrations() -> None:
+    """Ejecuta las migraciones SQL pendientes usando la Supabase Management API.
+    Solo corre si SUPABASE_ACCESS_TOKEN está definido en el entorno.
+    Falla silenciosamente para no bloquear el arranque de la app."""
+    import re, json
+    from pathlib import Path
+
+    token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+    if not token:
+        return  # token no configurado → saltar silenciosamente
+
+    url = settings.SUPABASE_URL
+    m = re.match(r"https://([a-z0-9]+)\.supabase\.co", url)
+    if not m:
+        return
+    ref = m.group(1)
+    api_url = f"https://api.supabase.com/v1/projects/{ref}/database/query"
+
+    import subprocess
+    migrations_dir = Path(__file__).parent / "migrations"
+    sql_files = sorted(migrations_dir.glob("*.sql"))
+    for sql_file in sql_files:
+        try:
+            sql = sql_file.read_text(encoding="utf-8").strip()
+            payload = json.dumps({"query": sql})
+            subprocess.run(
+                ["curl", "-s", "-X", "POST", api_url,
+                 "-H", f"Authorization: Bearer {token}",
+                 "-H", "Content-Type: application/json",
+                 "-d", payload],
+                timeout=15, check=False,
+            )
+            print(f"[migrate] OK  {sql_file.name}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[migrate] WARN {sql_file.name}: {exc}")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _run_migrations()
+    yield
+
+_API_DESCRIPTION = """
+## API REST para automatización de cesiones de facturas electrónicas en Colombia
+
+**FinPro Capital API** conecta tu empresa con la plataforma **RADIAN del DIAN** para registrar,
+gestionar y ceder facturas electrónicas mediante el **evento 037** (endoso en propiedad).
+
+---
+
+### Flujo principal
+
+| Paso | Endpoint | Descripción |
+|------|----------|-------------|
+| 1 | `POST /api/v1/auth/token` | Obtener JWT Bearer token |
+| 2 | `POST /api/v1/facturas/registrar` | Registrar factura con CUFE de la DIAN |
+| 3 | `PUT /api/v1/facturas/{cufe}/habilitar-cesion` | Marcar como título valor |
+| 4 | `POST /api/v1/cesion/crear` | Ceder en RADIAN — evento 037 en ≈1 segundo |
+
+---
+
+### Autenticación
+
+Todos los endpoints marcados con 🔒 requieren:
+```
+Authorization: Bearer <access_token>
+```
+Obtén el token con `POST /api/v1/auth/token` (form-urlencoded: `username` + `password`).
+
+---
+
+### Rate Limiting
+
+| Endpoint | Límite | Ventana |
+|----------|--------|---------|
+| `POST /auth/token` | 5 intentos | 60 segundos |
+| `POST /auth/registro` | 10 intentos | 5 minutos |
+
+Al superarlo recibirás `429 Too Many Requests` con el header `Retry-After`.
+
+---
+
+### Ambientes
+
+| Ambiente | Base URL | Estado |
+|----------|----------|--------|
+| Producción | `https://finpro-capital.vercel.app` | ✅ Activo |
+| Sandbox | `https://sandbox.finpro-capital.vercel.app` | 🚧 Próximamente |
+
+---
+
+### Documentación adicional
+
+Visita **[/developers](/developers)** para ejemplos de código en cURL, Python y JavaScript.
+"""
+
+app = FastAPI(
+    lifespan=lifespan,
+    title="FinPro Capital — RADIAN API",
+    description=_API_DESCRIPTION,
+    version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    contact={
+        "name": "FinPro Capital — Soporte",
+        "url": "https://finpro-capital.vercel.app/developers",
+        "email": "soporte@finprocapital.co",
+    },
+    license_info={
+        "name": "Uso Privado — FinPro Capital SAS",
+        "url": "https://finpro-capital.vercel.app",
+    },
+    openapi_tags=[
+        {
+            "name": "Autenticacion",
+            "description": (
+                "Registro de empresas, login con JWT, manejo de sesión. "
+                "Cookies httpOnly + CSRF doble-submit para la app web. "
+                "Bearer token para clientes externos. "
+                "**Rate limiting**: 5 intentos/60s en login, 10 intentos/5min en registro."
+            ),
+        },
+        {
+            "name": "Facturas",
+            "description": (
+                "CRUD de facturas electrónicas colombianas. Registra por CUFE (96 hex chars del XML DIAN), "
+                "habilita como título valor y consulta el estado. "
+                "Solo facturas con eventos 032/033 previos pueden cederse."
+            ),
+        },
+        {
+            "name": "Cesion RADIAN",
+            "description": (
+                "Creación y consulta de cesiones (endosos en propiedad) via el **evento 037 de RADIAN/DIAN**. "
+                "Respuesta en ≈1 segundo. Incluye descarga del XML firmado digitalmente."
+            ),
+        },
+        {
+            "name": "Consultas DIAN",
+            "description": "Consultas directas a los servicios web SOAP de la DIAN. Ping de conectividad y validación de estado.",
+        },
+        {
+            "name": "Reportes Excel",
+            "description": (
+                "Exportación contable a Excel (.xlsx): Libro Diario, Análisis de Cartera por aging "
+                "y Estado de Resultados. Listos para auditoría."
+            ),
+        },
+        {
+            "name": "Health",
+            "description": "Estado del sistema. Público, sin autenticación.",
+        },
+    ],
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,7 +214,11 @@ app.include_router(autenticacion.router, prefix="/api/v1/auth",     tags=["Auten
 app.include_router(facturas.router,      prefix="/api/v1/facturas",  tags=["Facturas"])
 app.include_router(cesion.router,        prefix="/api/v1/cesion",    tags=["Cesion RADIAN"])
 app.include_router(consultas.router,     prefix="/api/v1/consultas", tags=["Consultas DIAN"])
-app.include_router(reportes.router,      prefix="/api/v1/reportes",  tags=["Reportes Excel"])
+app.include_router(reportes.router,       prefix="/api/v1/reportes",        tags=["Reportes Excel"])
+app.include_router(notificaciones.router, prefix="/api/v1/notificaciones",   tags=["Notificaciones"])
+app.include_router(deudor.router,         prefix="/api/v1/deudor",            tags=["Portal Deudor"])
+app.include_router(organizaciones.router, prefix="/api/v1/organizaciones",    tags=["Organizaciones"])
+app.include_router(pagos.router,          prefix="/api/v1/pagos",             tags=["Pagos Wompi"])
 
 UI = r"""<!DOCTYPE html>
 <html lang="es">
@@ -474,6 +636,42 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 .kpi-val{font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--text-primary)}
 .kpi-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-weight:600}
 .kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:6px}
+.kpi-card{position:relative;overflow:hidden;transition:.18s;cursor:default}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 2px 2px}
+.kpi-c1::after{background:linear-gradient(90deg,var(--brand),var(--teal))}
+.kpi-c2::after{background:linear-gradient(90deg,var(--green),#34D399)}
+.kpi-c3::after{background:linear-gradient(90deg,#F59E0B,#FCD34D)}
+.kpi-c4::after{background:linear-gradient(90deg,var(--purple),#A78BFA)}
+.kpi-c5::after{background:linear-gradient(90deg,var(--red),#F87171)}
+.kpi-c6::after{background:linear-gradient(90deg,var(--teal),#22D3EE)}
+.kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.semaforo{display:inline-flex;align-items:center;gap:5px;font-size:26px;font-weight:800;letter-spacing:-1px}
+.sem-verde{color:var(--green)}
+.sem-amarillo{color:var(--gold)}
+.sem-rojo{color:var(--red)}
+/* Alerts */
+.alerts-tbl tr.al-urgent td{background:rgba(220,38,38,.03)}
+.alerts-tbl tr.al-warn td{background:rgba(217,119,6,.03)}
+.al-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:4px;vertical-align:middle}
+.al-dot-red{background:var(--red)}
+.al-dot-yellow{background:var(--gold)}
+.al-dot-blue{background:var(--brand)}
+.al-dot-gray{background:#9CA3AF}
+/* SVG Chart */
+.chart-wrap{position:relative;width:100%}
+.chart-svg{width:100%;overflow:visible}
+.chart-tooltip{position:absolute;background:#0D1B2E;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.6;pointer-events:none;opacity:0;transition:.1s;white-space:nowrap;z-index:100;transform:translateY(-8px)}
+.chart-tooltip.show{opacity:1;transform:translateY(0)}
+.chart-legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.chart-leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.chart-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+/* Status enhanced */
+.status-label{font-size:13px;font-weight:500;color:var(--text-primary)}
+.status-ts{font-size:10px;color:var(--text-muted);margin-top:1px}
+.lat-wrap{display:flex;align-items:center;gap:8px}
+.lat-bg{width:60px;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.lat-fill{height:100%;border-radius:2px;transition:.5s}
 
 /* ─── CESIONES LIST ─── */
 .ces-estado-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700}
@@ -587,6 +785,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
   .wiz-box{max-height:95vh;overflow-y:auto}
   .topbar-right .btn-primary{display:none}/* only hamburger + title on tiny screens */
 }
+/* ── TOGGLE SWITCH ───────────────────────────────────────────── */
+.notif-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.notif-row:last-child{border-bottom:none}
+.notif-info{}
+.notif-label{font-size:14px;font-weight:500;color:var(--text)}
+.notif-desc{font-size:12px;color:var(--text-muted);margin-top:2px}
+.toggle{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:24px;cursor:pointer;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--brand)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
 </style>
 </head>
 <body>
@@ -734,6 +944,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
     <span class="nav-label">API Explorer</span>
   </a>
+  <a class="nav-item" id="nav-notificaciones" onclick="showPage('notificaciones')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <span class="nav-label">Notificaciones</span>
+  </a>
   <a class="nav-item" href="/openapi.json" target="_blank">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
     <span class="nav-label">OpenAPI JSON</span>
@@ -786,6 +1000,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
 
     <!-- ══ DASHBOARD ══ -->
     <div id="page-dashboard" class="tab-content active">
+      <!-- Accounting Banner -->
       <div style="background:linear-gradient(135deg,#0F2554,#1A4FD6);border-radius:var(--radius-lg);padding:16px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div style="display:flex;align-items:center;gap:14px">
           <div style="width:40px;height:40px;background:rgba(255,255,255,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center">
@@ -801,40 +1016,59 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
           <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25)" onclick="showPage('resultados')">Estado de Resultados</button>
         </div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card c1">
-          <div class="stat-icon si-blue">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+
+      <!-- 6 KPI Cards -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi-card kpi-c1">
+          <div class="kpi-icon" style="background:#EEF3FF;color:var(--brand)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-          <div class="stat-value" id="st-total">—</div>
-          <div class="stat-label">Total Facturas</div>
-          <div class="stat-trend">Registradas en el sistema</div>
+          <div class="kpi-val" id="kpi-liquidez">—</div>
+          <div class="kpi-label">Liquidez Disponible</div>
+          <div class="kpi-sub" id="kpi-liquidez-sub">Facturas habilitadas para ceder</div>
         </div>
-        <div class="stat-card c2">
-          <div class="stat-icon si-green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="kpi-card kpi-c2">
+          <div class="kpi-icon" style="background:var(--green-bg);color:var(--green)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           </div>
-          <div class="stat-value" id="st-cedidas">—</div>
-          <div class="stat-label">Cedidas</div>
-          <div class="stat-trend">Cesiones completadas</div>
+          <div class="kpi-val" id="kpi-cedido">—</div>
+          <div class="kpi-label">Cedido Este Mes</div>
+          <div class="kpi-sub" id="kpi-cedido-sub">Cesiones aceptadas</div>
         </div>
-        <div class="stat-card c3">
-          <div class="stat-icon si-gold">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        <div class="kpi-card kpi-c3">
+          <div class="kpi-icon" style="background:var(--gold-bg);color:var(--gold)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
           </div>
-          <div class="stat-value" id="st-titulos">—</div>
-          <div class="stat-label">Títulos Valor</div>
-          <div class="stat-trend">Habilitadas para ceder</div>
+          <div id="kpi-tasa-wrap"><div class="kpi-val" id="kpi-tasa-val">—</div></div>
+          <div class="kpi-label">Tasa Aprobación DIAN</div>
+          <div class="kpi-sub" id="kpi-tasa-sub">Cesiones aceptadas vs total</div>
         </div>
-        <div class="stat-card c4">
-          <div class="stat-icon si-purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <div class="kpi-card kpi-c4">
+          <div class="kpi-icon" style="background:var(--purple-bg);color:var(--purple)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
           </div>
-          <div class="stat-value" id="st-proceso">—</div>
-          <div class="stat-label">En Proceso</div>
-          <div class="stat-trend">Enviadas a RADIAN</div>
+          <div class="kpi-val" id="kpi-tiempo">—</div>
+          <div class="kpi-label">Tiempo Promedio Cesión</div>
+          <div class="kpi-sub">días desde emisión hasta cesión</div>
+        </div>
+        <div class="kpi-card kpi-c5">
+          <div class="kpi-icon" style="background:var(--red-bg);color:var(--red)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px"><path d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          </div>
+          <div class="kpi-val" id="kpi-vencer">—</div>
+          <div class="kpi-label">Por Vencer 30 días</div>
+          <div class="kpi-sub" id="kpi-vencer-sub">Facturas activas próximas</div>
+        </div>
+        <div class="kpi-card kpi-c6">
+          <div class="kpi-icon" style="background:#F0FDFF;color:var(--teal)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <div class="kpi-val" id="kpi-ahorro">—</div>
+          <div class="kpi-label">Ahorro vs Manual</div>
+          <div class="kpi-sub">costos operativos evitados</div>
         </div>
       </div>
+
       <!-- ONBOARDING CHECKLIST WIDGET -->
       <div class="obw" id="obw-widget">
         <div class="obw-header">
@@ -866,26 +1100,61 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
         <div class="obw-dismiss"><a onclick="dismissChecklist()">Ocultar lista de inicio</a></div>
       </div>
 
+      <!-- Chart + System Status -->
       <div class="grid-2 mb-20">
         <div class="card">
           <div class="card-head">
             <div>
               <div class="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Últimas Facturas
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Actividad — Últimos 6 meses
               </div>
             </div>
-            <a class="card-link" onclick="showPage('facturas')">
-              Ver todas
-              <svg viewBox="0 0 20 20" fill="currentColor" style="width:12px"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-            </a>
+            <span style="font-size:11px;color:var(--text-muted)">Facturas vs Cesiones</span>
           </div>
-          <table class="tbl">
-            <thead><tr><th>Factura</th><th>Adquiriente</th><th>Valor</th><th>Estado</th></tr></thead>
-            <tbody id="dash-facturas"><tr><td colspan="4"><div class="empty-state" style="padding:24px"><div class="empty-text">Cargando datos...</div></div></td></tr></tbody>
-          </table>
+          <div class="card-body">
+            <div class="chart-wrap">
+              <svg id="dash-chart" class="chart-svg" viewBox="0 0 500 160" preserveAspectRatio="none" style="height:160px"></svg>
+              <div id="chart-tip" class="chart-tooltip"></div>
+            </div>
+            <div class="chart-legend">
+              <div class="chart-leg-item"><div class="chart-leg-dot" style="background:var(--brand)"></div>Facturas emitidas</div>
+              <div class="chart-leg-item"><div class="chart-leg-dot" style="background:var(--green)"></div>Monto cedido (normalizado)</div>
+            </div>
+          </div>
         </div>
         <div class="grid-col">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Estado del sistema
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="checkApiStatus(true)" style="font-size:11px;padding:4px 10px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+                Verificar
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="status-row">
+                <div>
+                  <div class="status-label">API RADIAN</div>
+                  <div class="status-ts" id="status-ts">—</div>
+                </div>
+                <span class="badge b-gray" id="status-api">Verificando</span>
+              </div>
+              <div class="status-row">
+                <div class="status-label">Latencia SOAP</div>
+                <div class="lat-wrap">
+                  <div class="lat-bg"><div id="lat-fill" class="lat-fill" style="width:0%;background:var(--green)"></div></div>
+                  <span id="lat-ms" style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:right">—</span>
+                </div>
+              </div>
+              <div class="status-row"><div class="status-label">DIAN Habilitación</div><span class="badge b-gold" id="status-dian">Sin certificado</span></div>
+              <div class="status-row"><div class="status-label">Base de datos</div><span class="badge b-green" id="status-db">Conectada</span></div>
+              <div class="status-row"><div class="status-label">Ambiente</div><span class="badge b-blue">Habilitación</span></div>
+            </div>
+          </div>
           <div class="card">
             <div class="card-head">
               <div class="card-title">
@@ -895,27 +1164,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
             </div>
             <div class="card-body">
               <div class="steps">
-                <div class="step"><div class="step-circle sc-done">✓</div><div><div class="step-title">Factura validada DIAN</div><div class="step-desc">CUFE emitido y activo en la plataforma</div></div></div>
-                <div class="step"><div class="step-circle sc-done">✓</div><div><div class="step-title">Eventos 032 y 033</div><div class="step-desc">Recibo mercantil y aceptación del adquiriente</div></div></div>
-                <div class="step"><div class="step-circle sc-active">3</div><div><div class="step-title">Habilitar título valor</div><div class="step-desc">Marcar la factura como endosable</div></div></div>
-                <div class="step"><div class="step-circle sc-pending">4</div><div><div class="step-title">Ceder en RADIAN</div><div class="step-desc">Evento 037 enviado a DIAN (≈1 seg)</div></div></div>
+                <div class="step"><div class="step-circle sc-done">✓</div><div><div class="step-title">Factura validada DIAN</div><div class="step-desc">CUFE emitido y activo</div></div></div>
+                <div class="step"><div class="step-circle sc-done">✓</div><div><div class="step-title">Eventos 032 y 033</div><div class="step-desc">Recibo y aceptación</div></div></div>
+                <div class="step"><div class="step-circle sc-active">3</div><div><div class="step-title">Habilitar título valor</div><div class="step-desc">Marcar como endosable</div></div></div>
+                <div class="step"><div class="step-circle sc-pending">4</div><div><div class="step-title">Ceder en RADIAN</div><div class="step-desc">Evento 037 → DIAN (≈1s)</div></div></div>
               </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-head">
-              <div class="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                Estado del sistema
-              </div>
+        </div>
+      </div>
+
+      <!-- Alerts Table -->
+      <div class="card mb-20">
+        <div class="card-head">
+          <div>
+            <div class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+              Alertas y Acciones Pendientes
             </div>
-            <div class="card-body">
-              <div class="status-row"><span class="status-label">API RADIAN</span><span class="badge b-green" id="status-api">Verificando</span></div>
-              <div class="status-row"><span class="status-label">DIAN Habilitación</span><span class="badge b-gold" id="status-dian">Sin certificado</span></div>
-              <div class="status-row"><span class="status-label">Base de datos</span><span class="badge b-green" id="status-db">Conectada</span></div>
-              <div class="status-row"><span class="status-label">Ambiente</span><span class="badge b-blue">Habilitación</span></div>
-            </div>
+            <div class="card-subtitle" id="alerts-sub">Vencimientos · Pendientes DIAN · Rechazos</div>
           </div>
+          <span id="alerts-count" class="badge b-red" style="display:none">0</span>
+        </div>
+        <div class="tbl-scroll">
+          <table class="tbl alerts-tbl tbl-mobile">
+            <thead><tr><th>Prioridad</th><th>Factura</th><th>Motivo</th><th>Valor</th><th>Fecha límite</th><th>Acción</th></tr></thead>
+            <tbody id="dash-alerts"><tr><td colspan="6"><div class="empty-state" style="padding:24px"><div class="empty-text">Cargando alertas...</div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1539,6 +1814,65 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-primary);min-
       </div>
     </div>
 
+    <div id="page-notificaciones" class="tab-content">
+      <div class="card" style="max-width:640px">
+        <div class="card-head">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Preferencias de Email
+          </div>
+          <button class="btn btn-primary btn-sm" id="notif-save-btn" onclick="saveNotificaciones()">Guardar cambios</button>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px">Elige qué notificaciones quieres recibir por correo electrónico. Los cambios se guardan de forma individual.</p>
+          <div id="notif-rows">
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">Bienvenida</div>
+                <div class="notif-desc">Email de bienvenida al registrar tu cuenta</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="notif-bienvenida" onchange="saveNotificaciones()"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">Cesión aceptada</div>
+                <div class="notif-desc">Confirmación cuando RADIAN aprueba una cesión</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="notif-cesion-aceptada" onchange="saveNotificaciones()"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">Cesión rechazada</div>
+                <div class="notif-desc">Aviso cuando la DIAN rechaza un evento 037</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="notif-cesion-rechazada" onchange="saveNotificaciones()"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">Vencimiento en 7 días</div>
+                <div class="notif-desc">Alerta proactiva de facturas próximas a vencer</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="notif-vencimiento-7d" onchange="saveNotificaciones()"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">Facturas vencidas</div>
+                <div class="notif-desc">Notificación urgente de cartera en mora</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="notif-vencidas" onchange="saveNotificaciones()"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-info">
+                <div class="notif-label">Reporte mensual</div>
+                <div class="notif-desc">Resumen ejecutivo el primer día de cada mes</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="notif-reporte-mensual" onchange="saveNotificaciones()"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- end content -->
 </div><!-- end main -->
 </div><!-- end layout -->
@@ -1947,6 +2281,7 @@ async function doLogin() {
   const errTxt = document.getElementById('login-err-text');
   const btn = document.getElementById('login-btn');
   if(!email||!pass){ showErr(errEl, errTxt, 'Completa todos los campos'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showErr(errEl, errTxt, 'Ingresa un email válido'); return; }
   btn.innerHTML='<span class="spinner"></span> Ingresando...'; btn.disabled=true;
   try {
     const fd = new FormData();
@@ -1975,6 +2310,8 @@ async function doRegister() {
   const errTxt=document.getElementById('reg-err-text');
   const btn=document.getElementById('reg-btn');
   if(!nombre||!nit||!email||!pass){ showErr(errEl, errTxt, 'Completa los campos obligatorios'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showErr(errEl, errTxt, 'Ingresa un email válido'); return; }
+  if(!/^\d{6,15}(-\d)?$/.test(nit)){ showErr(errEl, errTxt, 'NIT inválido (ej: 900123456-7)'); return; }
   btn.innerHTML='<span class="spinner"></span> Creando cuenta...'; btn.disabled=true;
   try {
     const r=await fetch(API+'/api/v1/auth/registro',{
@@ -2063,37 +2400,219 @@ async function loadUserInfo() {
 
 async function loadDashboard() {
   checkApiStatus();
-  // Load cesiones KPIs for dashboard
-  apiFetch('/api/v1/cesion/?limit=500').then(r=>r.json()).then(d=>{
-    const ces=(d.cesiones||[]).filter(c=>c.estado==='ACEPTADA');
-    const tot=ces.reduce((s,c)=>s+(c.valor_cesion||0),0);
-    const el=document.getElementById('dash-ces-total');
-    if(el) el.textContent='$'+fmtNum(tot)+' en '+ces.length+' cesión'+(ces.length!==1?'es':'');
-  }).catch(()=>{});
   try {
-    const r=await apiFetch('/api/v1/facturas/?limit=100');
-    if(!r.ok) throw new Error();
-    const d=await r.json();
-    const fs=d.facturas||[];
-    document.getElementById('st-total').textContent=d.total||0;
-    document.getElementById('st-cedidas').textContent=fs.filter(f=>f.estado==='CEDIDA').length;
-    document.getElementById('st-titulos').textContent=fs.filter(f=>f.es_titulo_valor&&f.estado!=='CEDIDA').length;
-    document.getElementById('st-proceso').textContent=fs.filter(f=>f.estado==='EN_CESION').length;
-    const tbody=document.getElementById('dash-facturas');
-    if(!fs.length){
-      tbody.innerHTML='<tr><td colspan="4"><div class="empty-hero"><div class="empty-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;color:var(--brand)"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div class="empty-hero-title">No has registrado facturas aún</div><div class="empty-hero-sub">Comienza ingresando el CUFE de tu primera factura electrónica emitida por la DIAN</div><button class="btn btn-primary btn-sm" onclick="showPage(\'registrar\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px"><path d="M12 4v16m8-8H4"/></svg>Registrar primera factura</button></div></td></tr>';
-      return;
+    const [rFact, rCes] = await Promise.all([
+      apiFetch('/api/v1/facturas/?limit=200'),
+      apiFetch('/api/v1/cesion/?limit=500')
+    ]);
+    if(!rFact.ok || !rCes.ok) throw new Error();
+    const dFact = await rFact.json();
+    const dCes  = await rCes.json();
+    const fs  = dFact.facturas || [];
+    const ces = dCes.cesiones  || [];
+    const now = new Date();
+
+    // ── Accounting banner
+    const cesAcept = ces.filter(c=>c.estado==='ACEPTADA');
+    const totCes   = cesAcept.reduce((s,c)=>s+(c.valor_cesion||0),0);
+    const elBanner = document.getElementById('dash-ces-total');
+    if(elBanner) elBanner.textContent='$'+fmtNum(totCes)+' cedidos en total · '+cesAcept.length+' cesión'+(cesAcept.length!==1?'es':'');
+
+    // ── KPI 1: Liquidez disponible
+    const habNoced = fs.filter(f=>f.es_titulo_valor && f.estado!=='CEDIDA');
+    const liquidez = habNoced.reduce((s,f)=>s+(f.valor_total||0),0);
+    document.getElementById('kpi-liquidez').textContent = '$'+fmtNum(liquidez);
+    document.getElementById('kpi-liquidez-sub').textContent = habNoced.length+' factura'+(habNoced.length!==1?'s':'')+' disponibles';
+
+    // ── KPI 2: Cedido este mes
+    const mesAct=now.getMonth(), anioAct=now.getFullYear();
+    const cesMes = cesAcept.filter(c=>{
+      if(!c.fecha_cesion) return false;
+      const d=new Date(c.fecha_cesion);
+      return d.getMonth()===mesAct && d.getFullYear()===anioAct;
+    });
+    const totMes = cesMes.reduce((s,c)=>s+(c.valor_cesion||0),0);
+    document.getElementById('kpi-cedido').textContent = '$'+fmtNum(totMes);
+    document.getElementById('kpi-cedido-sub').textContent = cesMes.length+' cesión'+(cesMes.length!==1?'es':'')+' este mes';
+
+    // ── KPI 3: Tasa aprobación DIAN (semáforo)
+    const cesTotal=ces.length, cesAceptN=cesAcept.length;
+    const tasa = cesTotal>0 ? Math.round(cesAceptN/cesTotal*100) : null;
+    const tasaEl=document.getElementById('kpi-tasa-val');
+    if(tasa===null){
+      tasaEl.textContent='—';
+      document.getElementById('kpi-tasa-sub').textContent='Sin cesiones aún';
+    } else {
+      const cls=tasa>=85?'sem-verde':tasa>=60?'sem-amarillo':'sem-rojo';
+      const dot=tasa>=85?'🟢':tasa>=60?'🟡':'🔴';
+      tasaEl.outerHTML=`<div class="semaforo ${cls}" id="kpi-tasa-val">${dot} ${tasa}%</div>`;
+      document.getElementById('kpi-tasa-sub').textContent=cesAceptN+' de '+cesTotal+' cesiones';
     }
-    tbody.innerHTML=fs.slice(0,6).map(f=>`
-      <tr onclick="verDetalle('${f.cufe}')" style="cursor:pointer">
-        <td><div class="td-primary">${f.prefijo||'FV'}-${f.numero}</div><div class="td-mono">${(f.cufe||'').substring(0,18)}…</div></td>
-        <td style="font-size:12px;color:var(--text-secondary)">${f.adquiriente_nombre||'—'}</td>
-        <td><div class="td-amount">$${fmtNum(f.valor_total)}</div></td>
-        <td>${badgeEstado(f.estado)}</td>
-      </tr>`).join('');
-  }catch(e){
-    document.getElementById('dash-facturas').innerHTML='<tr><td colspan="4"><div class="empty-state" style="padding:20px"><div class="empty-text" style="color:var(--red)">Error cargando facturas</div></div></td></tr>';
+
+    // ── KPI 4: Tiempo promedio cesión (días emisión → cesión)
+    const tiempos=cesAcept.filter(c=>c.cufe_factura).map(c=>{
+      const fact=fs.find(f=>f.cufe===c.cufe_factura);
+      if(!fact||!fact.fecha_emision||!c.fecha_cesion) return null;
+      const dias=(new Date(c.fecha_cesion)-new Date(fact.fecha_emision))/(86400000);
+      return dias>=0?dias:null;
+    }).filter(t=>t!==null);
+    const avgTiempo=tiempos.length?(tiempos.reduce((s,t)=>s+t,0)/tiempos.length).toFixed(1):null;
+    document.getElementById('kpi-tiempo').textContent = avgTiempo!==null ? avgTiempo+'d' : '—';
+
+    // ── KPI 5: Facturas por vencer 30d
+    const in30=new Date(now.getTime()+30*86400000);
+    const porVencer=fs.filter(f=>{
+      if(!f.fecha_vencimiento||f.estado==='CEDIDA'||f.estado==='PAGADA') return false;
+      const dv=new Date(f.fecha_vencimiento);
+      return dv>=now && dv<=in30;
+    });
+    const kpiV=document.getElementById('kpi-vencer');
+    kpiV.textContent=porVencer.length;
+    kpiV.style.color=porVencer.length>0?'var(--red)':'var(--green)';
+    document.getElementById('kpi-vencer-sub').textContent=porVencer.length?'Requieren atención inmediata':'Sin vencimientos próximos';
+
+    // ── KPI 6: Ahorro vs proceso manual (~$145k COP por cesión)
+    const ahorroTotal=cesAceptN*145000;
+    document.getElementById('kpi-ahorro').textContent='$'+fmtNum(ahorroTotal);
+
+    // ── SVG Chart
+    renderDashChart(fs, ces);
+
+    // ── Alerts Table
+    renderAlerts(fs, ces, now, in30);
+
+  } catch(e) {
+    console.error('loadDashboard', e);
+    const tbody=document.getElementById('dash-alerts');
+    if(tbody) tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="empty-text" style="color:var(--red)">Error cargando datos del dashboard</div></div></td></tr>';
   }
+}
+
+function renderDashChart(fs, ces) {
+  const svg=document.getElementById('dash-chart');
+  if(!svg) return;
+  const now=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({label:d.toLocaleDateString('es-CO',{month:'short',year:'2-digit'}),year:d.getFullYear(),month:d.getMonth()});
+  }
+  const factPM=months.map(m=>fs.filter(f=>{
+    if(!f.fecha_emision) return false;
+    const d=new Date(f.fecha_emision); return d.getMonth()===m.month&&d.getFullYear()===m.year;
+  }).length);
+  const cesPM=months.map(m=>ces.filter(c=>{
+    if(!c.fecha_cesion||c.estado!=='ACEPTADA') return false;
+    const d=new Date(c.fecha_cesion); return d.getMonth()===m.month&&d.getFullYear()===m.year;
+  }).reduce((s,c)=>s+(c.valor_cesion||0),0));
+  const maxF=Math.max(...factPM,1), maxC=Math.max(...cesPM,1);
+  const W=500,H=160,pL=8,pR=8,pT=14,pB=30,cW=W-pL-pR,cH=H-pT-pB;
+  const gW=cW/6, bW=Math.min(gW*.32,20), gap=bW*.5;
+  let html='';
+  // Grid lines
+  for(let i=0;i<=4;i++){
+    const y=pT+cH*(1-i/4);
+    html+=`<line x1="${pL}" y1="${y.toFixed(1)}" x2="${W-pR}" y2="${y.toFixed(1)}" stroke="#E4E9F0" stroke-width="1"/>`;
+  }
+  months.forEach((m,i)=>{
+    const cx=pL+gW*i+gW/2;
+    const x1=(cx-gap/2-bW).toFixed(1), x2=(cx+gap/2).toFixed(1);
+    const h1=Math.max(3,(factPM[i]/maxF)*cH), y1=(pT+cH-h1).toFixed(1);
+    const h2=Math.max(cesPM[i]>0?3:0,(cesPM[i]/maxC)*cH), y2=(pT+cH-h2).toFixed(1);
+    html+=`<rect x="${x1}" y="${y1}" width="${bW}" height="${h1.toFixed(1)}" rx="3" fill="var(--brand)" opacity=".82"
+      style="cursor:pointer" onmouseenter="showChartTip(event,'${m.label}',${factPM[i]},${cesPM[i]})" onmouseleave="hideChartTip()"/>`;
+    if(cesPM[i]>0) html+=`<rect x="${x2}" y="${y2}" width="${bW}" height="${h2.toFixed(1)}" rx="3" fill="var(--green)" opacity=".82"
+      style="cursor:pointer" onmouseenter="showChartTip(event,'${m.label}',${factPM[i]},${cesPM[i]})" onmouseleave="hideChartTip()"/>`;
+    if(factPM[i]>0) html+=`<text x="${(parseFloat(x1)+bW/2).toFixed(1)}" y="${(parseFloat(y1)-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--brand)" font-weight="700">${factPM[i]}</text>`;
+    html+=`<text x="${cx.toFixed(1)}" y="${(pT+cH+18).toFixed(1)}" text-anchor="middle" font-size="10" fill="#9DAEC0">${m.label}</text>`;
+  });
+  svg.innerHTML=html;
+}
+function showChartTip(e,month,facts,cesVal){
+  const tip=document.getElementById('chart-tip');
+  if(!tip) return;
+  tip.innerHTML=`<strong>${month}</strong><br>Facturas: ${facts}<br>Cedido: $${fmtNum(cesVal)}`;
+  tip.classList.add('show');
+  const rect=tip.parentElement.getBoundingClientRect();
+  tip.style.left=(e.clientX-rect.left+10)+'px';
+  tip.style.top=(e.clientY-rect.top-70)+'px';
+}
+function hideChartTip(){
+  const tip=document.getElementById('chart-tip');
+  if(tip) tip.classList.remove('show');
+}
+
+function renderAlerts(fs, ces, now, in30){
+  const tbody=document.getElementById('dash-alerts');
+  if(!tbody) return;
+  const alerts=[];
+  // Vencimientos próximos
+  fs.filter(f=>{
+    if(!f.fecha_vencimiento||f.estado==='CEDIDA'||f.estado==='PAGADA') return false;
+    const dv=new Date(f.fecha_vencimiento); return dv>=now&&dv<=in30;
+  }).forEach(f=>{
+    const dv=new Date(f.fecha_vencimiento);
+    const dias=Math.ceil((dv-now)/86400000);
+    alerts.push({
+      priority:dias<=3?1:2, dot:dias<=3?'red':'yellow',
+      tipo:dias<=3?'VENCE PRONTO':'POR VENCER',
+      factura:(f.prefijo||'FV')+'-'+f.numero,
+      motivo:`Vence en ${dias} día${dias!==1?'s':''}`,
+      valor:f.valor_total, fecha:fmtDate(f.fecha_vencimiento),
+      accion:f.es_titulo_valor?`irCeder('${f.cufe}')`:`quickHabilitar('${f.cufe}')`,
+      accionLabel:f.es_titulo_valor?'Ceder':'Habilitar',
+      accionClass:f.es_titulo_valor?'btn-primary':'btn-success',
+    });
+  });
+  // Pendientes DIAN
+  ces.filter(c=>c.estado==='EN_PROCESO'||c.estado==='PENDIENTE').forEach(c=>{
+    alerts.push({
+      priority:2, dot:'blue', tipo:'PENDIENTE DIAN',
+      factura:(c.cufe_factura||'').substring(0,16)+'…',
+      motivo:'Esperando respuesta RADIAN',
+      valor:c.valor_cesion, fecha:fmtDate(c.fecha_cesion),
+      accion:"showPage('cesiones')", accionLabel:'Ver cesiones', accionClass:'btn-ghost',
+    });
+  });
+  // Rechazos recientes (últimos 30d)
+  ces.filter(c=>{
+    if(c.estado!=='RECHAZADA'||!c.fecha_cesion) return false;
+    return (now-new Date(c.fecha_cesion))<(30*86400000);
+  }).forEach(c=>{
+    alerts.push({
+      priority:1, dot:'red', tipo:'RECHAZADA',
+      factura:(c.cufe_factura||'').substring(0,16)+'…',
+      motivo:c.mensaje_dian||'Rechazada por DIAN',
+      valor:c.valor_cesion, fecha:fmtDate(c.fecha_cesion),
+      accion:c.cufe_factura?`verDetalle('${c.cufe_factura}')`:"showPage('cesiones')",
+      accionLabel:'Ver factura', accionClass:'btn-ghost',
+    });
+  });
+  alerts.sort((a,b)=>a.priority-b.priority);
+  const cnt=document.getElementById('alerts-count');
+  const sub=document.getElementById('alerts-sub');
+  const urg=alerts.filter(a=>a.priority===1).length;
+  if(cnt){cnt.textContent=alerts.length;cnt.style.display=alerts.length?'inline-flex':'none';}
+  if(!alerts.length){
+    tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state" style="padding:24px">
+      <div class="empty-icon">✅</div>
+      <div class="empty-text" style="color:var(--green)">Sin alertas pendientes</div>
+      <div class="empty-sub">Todas tus facturas y cesiones están al día</div>
+    </div></td></tr>`;
+    if(sub) sub.textContent='Todo al día';
+    return;
+  }
+  if(sub) sub.textContent=(urg?urg+' urgente'+(urg!==1?'s':'')+' · ':'')+alerts.length+' alerta'+(alerts.length!==1?'s':'');
+  const dotColor={red:'var(--red)',yellow:'var(--gold)',blue:'var(--brand)',gray:'#9CA3AF'};
+  tbody.innerHTML=alerts.map(a=>`
+    <tr class="${a.priority===1?'al-urgent':'al-warn'}">
+      <td data-label="Prioridad"><span class="al-dot al-dot-${a.dot}"></span><span style="font-size:11px;font-weight:700;color:${dotColor[a.dot]}">${a.tipo}</span></td>
+      <td data-label="Factura"><div class="td-primary" style="font-size:12px">${a.factura}</div></td>
+      <td data-label="Motivo" style="font-size:12px;color:var(--text-secondary)">${a.motivo}</td>
+      <td data-label="Valor"><div class="td-amount">$${fmtNum(a.valor)}</div></td>
+      <td data-label="Fecha límite" style="font-size:12px;color:var(--text-muted)">${a.fecha}</td>
+      <td class="td-actions"><button class="btn ${a.accionClass} btn-sm" onclick="${a.accion}">${a.accionLabel}</button></td>
+    </tr>`).join('');
 }
 
 async function loadFacturas(estado='') {
@@ -2191,6 +2710,10 @@ async function registrarFactura() {
     const box=document.getElementById('resp-reg-fact');
     box.className='resp-box show'; box.innerHTML='<div class="resp-err">⚠ Completa todos los campos requeridos (*)</div>'; return;
   }
+  if(!/^[0-9a-fA-F]{96}$/.test(body.cufe)){
+    const box=document.getElementById('resp-reg-fact');
+    box.className='resp-box show'; box.innerHTML='<div class="resp-err">⚠ El CUFE debe tener exactamente 96 caracteres hexadecimales</div>'; return;
+  }
   const btn=document.getElementById('btn-reg-fact');
   const txt=document.getElementById('btn-reg-fact-text');
   btn.disabled=true; txt.innerHTML='<span class="spinner"></span> Registrando...';
@@ -2281,15 +2804,30 @@ async function probarEndpoint() {
   }catch(e){ box.innerHTML='<div class="resp-err">Error de conexión</div>'; }
 }
 
-async function checkApiStatus() {
+async function checkApiStatus(manual=false) {
+  const el=document.getElementById('status-api');
+  const ts=document.getElementById('status-ts');
+  const latFill=document.getElementById('lat-fill');
+  const latMs=document.getElementById('lat-ms');
+  if(el){el.className='badge b-gray';el.textContent='Verificando…';}
+  const t0=Date.now();
   try {
     const r=await fetch(API+'/health');
-    const el=document.getElementById('status-api');
-    el.className='badge '+(r.ok?'b-green':'b-red');
-    el.textContent=r.ok?'Activa':'Error';
+    const ms=Date.now()-t0;
+    if(el){el.className='badge '+(r.ok?'b-green':'b-red');el.textContent=r.ok?'Activa':'Error';}
+    if(ts) ts.textContent='Último ping '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(latFill){
+      const pct=Math.min(100,(ms/600)*100);
+      const col=ms<150?'var(--green)':ms<350?'var(--gold)':'var(--red)';
+      latFill.style.width=pct+'%';latFill.style.background=col;
+    }
+    if(latMs) latMs.textContent=ms+'ms';
+    if(manual) toast('API verificada — '+ms+'ms','ok');
   }catch(e){
-    const el=document.getElementById('status-api');
-    el.className='badge b-red'; el.textContent='Sin conexión';
+    if(el){el.className='badge b-red';el.textContent='Sin conexión';}
+    if(ts) ts.textContent='Error al conectar';
+    if(latMs) latMs.textContent='—';
+    if(manual) toast('No se pudo conectar con la API','err');
   }
 }
 
@@ -2629,7 +3167,8 @@ function showPage(p) {
     resultados:['Estado de Resultados','P&L acumulado del período'],
     reportes:['Reportes Excel','Descarga reportes contables profesionales en .xlsx'],
     consultar:['Consultar DIAN','Verificar estado de eventos en RADIAN'],
-    api:['API Explorer','Prueba los endpoints directamente']
+    api:['API Explorer','Prueba los endpoints directamente'],
+    notificaciones:['Notificaciones','Preferencias de email y alertas']
   };
   const t=titles[p]||[p,''];
   document.getElementById('page-title').textContent=t[0];
@@ -2640,6 +3179,46 @@ function showPage(p) {
   if(p==='flujo') loadFlujo();
   if(p==='contabilidad') loadContabilidad();
   if(p==='resultados') loadResultados();
+  if(p==='notificaciones') loadNotificaciones();
+}
+
+// ── NOTIFICACIONES ──
+let _notifSaving=false;
+async function loadNotificaciones(){
+  try{
+    const r=await apiFetch('/api/v1/notificaciones/preferencias');
+    document.getElementById('notif-bienvenida').checked=!!r.notify_bienvenida;
+    document.getElementById('notif-cesion-aceptada').checked=!!r.notify_cesion_aceptada;
+    document.getElementById('notif-cesion-rechazada').checked=!!r.notify_cesion_rechazada;
+    document.getElementById('notif-vencimiento-7d').checked=!!r.notify_vencimiento_7d;
+    document.getElementById('notif-vencidas').checked=!!r.notify_vencimiento_vencida;
+    document.getElementById('notif-reporte-mensual').checked=!!r.notify_reporte_mensual;
+  }catch(e){toast('Error cargando preferencias','err');}
+}
+async function saveNotificaciones(){
+  if(_notifSaving) return;
+  _notifSaving=true;
+  const btn=document.getElementById('notif-save-btn');
+  if(btn) btn.textContent='Guardando…';
+  try{
+    await apiFetch('/api/v1/notificaciones/preferencias',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        notify_bienvenida:document.getElementById('notif-bienvenida').checked,
+        notify_cesion_aceptada:document.getElementById('notif-cesion-aceptada').checked,
+        notify_cesion_rechazada:document.getElementById('notif-cesion-rechazada').checked,
+        notify_vencimiento_7d:document.getElementById('notif-vencimiento-7d').checked,
+        notify_vencimiento_vencida:document.getElementById('notif-vencidas').checked,
+        notify_reporte_mensual:document.getElementById('notif-reporte-mensual').checked,
+      })
+    });
+    toast('Preferencias guardadas','ok');
+  }catch(e){toast('Error guardando preferencias','err');}
+  finally{
+    _notifSaving=false;
+    if(btn) btn.textContent='Guardar cambios';
+  }
 }
 
 // ── UTILS ──
@@ -3359,6 +3938,523 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 </body>
 </html>"""
 
+DEVELOPERS_PAGE = r"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Developer Hub — FinPro Capital API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F6FA;--surface:#fff;--border:#E4E9F0;--border-soft:#F0F4F8;
+  --text:#0D1B2E;--text2:#5A6A7E;--muted:#9DAEC0;
+  --brand:#1A4FD6;--brand-dark:#1340B0;--brand-light:#EEF3FF;
+  --green:#059669;--green-bg:#ECFDF5;--gold:#D97706;--red:#DC2626;
+  --code-bg:#0D1B2E;--code-surface:#111C30;
+  --r:10px;--rl:14px;--rs:6px;
+  --shadow:0 1px 3px rgba(13,27,46,.06),0 4px 16px rgba(13,27,46,.04);
+  --shadow-md:0 4px 16px rgba(13,27,46,.10);
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* NAV */
+.nav{background:#0B1829;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:100}
+.nav-in{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.nav-logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:15px;text-decoration:none}
+.nav-badge{background:var(--brand);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.5px}
+.nav-links{display:flex;gap:2px;align-items:center}
+.nl{color:rgba(255,255,255,.6);font-size:13px;font-weight:500;padding:8px 13px;border-radius:8px;transition:.15s}
+.nl:hover{color:#fff;background:rgba(255,255,255,.08);text-decoration:none}
+.nl-cta{background:var(--brand);color:#fff!important;border-radius:8px;padding:8px 16px;font-weight:600}
+.nl-cta:hover{background:var(--brand-dark)!important;text-decoration:none}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0B1829 0%,#0F2554 55%,#1A4FD6 100%);padding:72px 24px 80px;text-align:center}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:5px 14px 5px 10px;font-size:12px;color:rgba(255,255,255,.85);margin-bottom:22px;font-weight:500}
+.hero h1{font-size:42px;font-weight:800;color:#fff;letter-spacing:-1.5px;line-height:1.15;margin-bottom:16px}
+.hero-sub{font-size:17px;color:rgba(255,255,255,.65);max-width:580px;margin:0 auto 40px;line-height:1.65}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hbtn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;border-radius:10px;font-size:14px;font-weight:600;transition:.18s;border:none;cursor:pointer;text-decoration:none!important}
+.hbtn-swagger{background:#49cc90;color:#0D1B2E}
+.hbtn-swagger:hover{background:#3dba7d}
+.hbtn-redoc{background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.25)}
+.hbtn-redoc:hover{background:rgba(255,255,255,.22)}
+.hbtn-json{background:rgba(255,255,255,.08);color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.14);padding:10px 18px;font-size:13px}
+.hbtn-json:hover{background:rgba(255,255,255,.15);color:#fff}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:0 24px 80px}
+.sec{margin-top:64px;scroll-margin-top:80px}
+.sec-title{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-num{background:var(--brand);color:#fff;font-size:11px;font-weight:700;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-sub{font-size:15px;color:var(--text2);margin-bottom:28px}
+
+/* QUICK LINKS */
+.ql-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:28px}
+.ql-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl);padding:24px;transition:.18s;display:flex;flex-direction:column;gap:10px}
+.ql-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:var(--brand)}
+.ql-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.ql-title{font-size:15px;font-weight:700}
+.ql-desc{font-size:13px;color:var(--text2);flex:1}
+.ql-lnk{font-size:13px;font-weight:600;color:var(--brand);display:inline-flex;align-items:center;gap:4px;margin-top:4px}
+
+/* TABS */
+.tab-head{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content}
+.tab-btn{padding:8px 18px;border-radius:7px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:.15s;font-family:var(--font)}
+.tab-btn.active{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* CODE */
+.code-wrap{background:var(--code-bg);border-radius:0 var(--rl) var(--rl) var(--rl);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.code-bar{background:var(--code-surface);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)}
+.code-lang{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+.code-copy{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6);font-size:11px;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:var(--font);font-weight:500;transition:.15s}
+.code-copy:hover{background:rgba(255,255,255,.16);color:#fff}
+pre{margin:0;padding:20px 22px;overflow-x:auto;font-size:12.5px;line-height:1.75}
+code{font-family:var(--mono);color:#e2e8f0}
+.c{color:#4a6282}.s{color:#fbbf24}.k{color:#a78bfa}.v{color:#34d399}.cmd{color:#60a5fa}.e{color:#f97316}.p{color:#9ca3af}
+ic{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);padding:2px 7px;border-radius:5px;color:var(--brand)}
+
+/* INLINE CODE */
+.ic{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--border);padding:2px 7px;border-radius:5px;color:var(--brand)}
+
+/* CONCEPTS */
+.concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:22px 24px}
+.cc-tag{display:inline-block;background:var(--brand-light);color:var(--brand);font-size:10px;font-weight:700;padding:2px 10px;border-radius:99px;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase}
+.cc-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.cc-body{font-size:13px;color:var(--text2);line-height:1.65}
+.cm{font-family:var(--mono);font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--text)}
+
+/* AUTH STEPS */
+.auth-steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.as{display:flex;gap:16px;padding:20px 24px;border-bottom:1px solid var(--border)}
+.as:last-child{border-bottom:none}
+.as-num{width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.as-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.as-body{font-size:13px;color:var(--text2)}
+
+/* ENVIRONMENTS */
+.env-tbl{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
+.env-tbl th{background:var(--bg);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:12px 18px;text-align:left;border-bottom:1px solid var(--border)}
+.env-tbl td{padding:14px 18px;font-size:13px;border-bottom:1px solid var(--border-soft)}
+.env-tbl tr:last-child td{border-bottom:none}
+.env-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+.eb-prod{background:var(--green-bg);color:var(--green)}
+.eb-sand{background:#FFF7ED;color:#92400E}
+.ec{font-family:var(--mono);font-size:12px;color:var(--brand)}
+
+/* RATE LIMIT */
+.rl-tbl{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
+.rl-tbl th{background:var(--bg);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:12px 18px;text-align:left;border-bottom:1px solid var(--border)}
+.rl-tbl td{padding:13px 18px;font-size:13px;border-bottom:1px solid var(--border-soft)}
+.rl-tbl tr:last-child td{border-bottom:none}
+
+/* ERROR CODES */
+.err-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.err-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.err-code{font-family:var(--mono);font-size:20px;font-weight:800;min-width:50px;line-height:1}
+.e4xx{color:var(--gold)}.e5xx{color:var(--red)}
+.err-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.err-desc{font-size:12px;color:var(--text2)}
+
+/* NOTICE */
+.notice{padding:14px 18px;background:var(--brand-light);border-radius:var(--r);border-left:3px solid var(--brand);font-size:13px;color:var(--text2);margin-top:16px}
+.notice strong{color:var(--brand)}
+
+/* FOOTER */
+.footer{background:#0B1829;color:rgba(255,255,255,.45);text-align:center;padding:28px 24px;font-size:13px;margin-top:80px}
+.footer a{color:rgba(255,255,255,.6)}
+.footer a:hover{color:#fff}
+
+@media(max-width:768px){
+  .hero h1{font-size:28px}.hero-sub{font-size:15px}
+  .ql-grid,.concept-grid,.err-grid{grid-template-columns:1fr}
+  .nav-links .nl span{display:none}
+  .tab-head{width:100%}.tab-btn{flex:1;padding:8px 6px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a href="/" class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1A4FD6" stroke-width="2.5" style="width:22px"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      FinPro Capital
+      <span class="nav-badge">API</span>
+    </a>
+    <div class="nav-links">
+      <a href="#quickstart" class="nl"><span>Quickstart</span></a>
+      <a href="#auth" class="nl"><span>Auth</span></a>
+      <a href="#concepts" class="nl"><span>Conceptos</span></a>
+      <a href="#errors" class="nl"><span>Errores</span></a>
+      <a href="/api/docs" class="nl"><span>Swagger UI</span></a>
+      <a href="/app" class="nl nl-cta">Iniciar sesión →</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">
+    <span style="width:7px;height:7px;background:#49cc90;border-radius:50%;display:inline-block"></span>
+    API v1.0.0 — Producción activa
+  </div>
+  <h1>FinPro Capital<br>Developer Hub</h1>
+  <p class="hero-sub">Automatiza cesiones de facturas electrónicas en RADIAN/DIAN con una API REST simple. Evento 037 en menos de 1 segundo.</p>
+  <div class="hero-btns">
+    <a href="/api/docs" class="hbtn hbtn-swagger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      Swagger UI
+    </a>
+    <a href="/api/redoc" class="hbtn hbtn-redoc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      ReDoc
+    </a>
+    <a href="/api/openapi.json" class="hbtn hbtn-json" target="_blank">{ } OpenAPI JSON</a>
+  </div>
+</section>
+
+<main class="main">
+
+  <!-- QUICK LINKS -->
+  <section class="sec" id="tools">
+    <div class="sec-title"><span class="sec-num">⚡</span> Herramientas interactivas</div>
+    <p class="sec-sub">Explora y prueba los endpoints directamente en el navegador.</p>
+    <div class="ql-grid">
+      <div class="ql-card">
+        <div class="ql-icon" style="background:#E8FAF0">🟢</div>
+        <div class="ql-title">Swagger UI</div>
+        <div class="ql-desc">Interfaz interactiva con formularios. Haz clic en <strong>Authorize 🔒</strong> para pegar tu Bearer token y probar todos los endpoints.</div>
+        <a href="/api/docs" class="ql-lnk">Abrir Swagger UI →</a>
+      </div>
+      <div class="ql-card">
+        <div class="ql-icon" style="background:#EEF3FF">📋</div>
+        <div class="ql-title">ReDoc</div>
+        <div class="ql-desc">Documentación legible con ejemplos de request y response organizados. Ideal para revisar el schema antes de integrar.</div>
+        <a href="/api/redoc" class="ql-lnk">Abrir ReDoc →</a>
+      </div>
+      <div class="ql-card">
+        <div class="ql-icon" style="background:#FFF7ED">⚙️</div>
+        <div class="ql-title">OpenAPI JSON</div>
+        <div class="ql-desc">Schema OpenAPI 3.0. Importa en Postman, Insomnia o genera un cliente SDK con <span class="ic">openapi-generator</span>.</div>
+        <a href="/api/openapi.json" class="ql-lnk" target="_blank">Descargar schema →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICKSTART -->
+  <section class="sec" id="quickstart">
+    <div class="sec-title"><span class="sec-num">1</span> Quickstart — 3 pasos</div>
+    <p class="sec-sub">Autenticar → Registrar factura → Crear cesión RADIAN. Listo en menos de 2 minutos.</p>
+    <div class="tab-head">
+      <button class="tab-btn active" onclick="switchTab('qs','curl',this)">cURL</button>
+      <button class="tab-btn" onclick="switchTab('qs','python',this)">Python</button>
+      <button class="tab-btn" onclick="switchTab('qs','js',this)">JavaScript</button>
+    </div>
+    <!-- cURL -->
+    <div id="qs-curl" class="tab-pane active">
+      <div class="code-wrap">
+        <div class="code-bar"><span class="code-lang">bash</span><button class="code-copy" onclick="copyCode(this)">Copiar</button></div>
+        <pre><code><span class="c"># 1. Autenticar y capturar token</span>
+<span class="e">TOKEN</span><span class="p">=</span><span class="cmd">$(</span>curl -s -X POST https://finpro-capital.vercel.app/api/v1/auth/token \
+  -H <span class="s">"Content-Type: application/x-www-form-urlencoded"</span> \
+  -d <span class="s">"username=empresa@correo.com&password=tu_password"</span> \
+  | jq -r <span class="s">'.access_token'</span><span class="cmd">)</span>
+
+<span class="c"># 2. Registrar una factura electrónica</span>
+curl -s -X POST https://finpro-capital.vercel.app/api/v1/facturas/registrar \
+  -H <span class="s">"Authorization: Bearer $TOKEN"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "cufe": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+    "numero": "00001", "prefijo": "FV",
+    "emisor_nit": "900123456", "emisor_nombre": "Mi Empresa SAS",
+    "adquiriente_nit": "800765432", "adquiriente_nombre": "Comprador Colombia SA",
+    "valor_base": 1000000, "valor_iva": 190000, "valor_total": 1190000,
+    "fecha_emision": "2025-01-15", "fecha_vencimiento": "2025-02-15"
+  }'</span>
+
+<span class="c"># 3. Habilitar como título valor</span>
+curl -s -X PUT https://finpro-capital.vercel.app/api/v1/facturas/a1b2c3d4.../habilitar-cesion \
+  -H <span class="s">"Authorization: Bearer $TOKEN"</span>
+
+<span class="c"># 4. Crear cesión — Evento 037 RADIAN/DIAN</span>
+curl -s -X POST https://finpro-capital.vercel.app/api/v1/cesion/crear \
+  -H <span class="s">"Authorization: Bearer $TOKEN"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "cufe_factura": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+    "cedente_nit": "900123456", "cedente_nombre": "Mi Empresa SAS",
+    "cesionario_nit": "860002153", "cesionario_nombre": "Banco de Bogota SA",
+    "valor_cesion": 1190000, "fecha_cesion": "2025-01-16"
+  }'</span>
+<span class="c"># Respuesta: { "cude": "...", "estado": "ACEPTADA", "xml_firmado": "..." }</span></code></pre>
+      </div>
+    </div>
+    <!-- Python -->
+    <div id="qs-python" class="tab-pane">
+      <div class="code-wrap">
+        <div class="code-bar"><span class="code-lang">python</span><button class="code-copy" onclick="copyCode(this)">Copiar</button></div>
+        <pre><code><span class="c"># pip install requests</span>
+<span class="k">import</span> requests
+
+<span class="e">BASE</span> = <span class="s">"https://finpro-capital.vercel.app"</span>
+
+<span class="c"># 1. Autenticar</span>
+<span class="e">r</span> = requests.post(<span class="s">f"{BASE}/api/v1/auth/token"</span>,
+    data={<span class="s">"username"</span>: <span class="s">"empresa@correo.com"</span>, <span class="s">"password"</span>: <span class="s">"tu_password"</span>})
+<span class="e">token</span> = r.json()[<span class="s">"access_token"</span>]
+<span class="e">hdrs</span> = {<span class="s">"Authorization"</span>: <span class="s">f"Bearer {token}"</span>}
+
+<span class="c"># 2. Registrar factura</span>
+requests.post(<span class="s">f"{BASE}/api/v1/facturas/registrar"</span>, headers=hdrs, json={
+    <span class="s">"cufe"</span>: <span class="s">"a1b2c3d4"</span> * 12,  <span class="c"># 96 chars hex del XML DIAN</span>
+    <span class="s">"numero"</span>: <span class="s">"00001"</span>, <span class="s">"prefijo"</span>: <span class="s">"FV"</span>,
+    <span class="s">"emisor_nit"</span>: <span class="s">"900123456"</span>, <span class="s">"emisor_nombre"</span>: <span class="s">"Mi Empresa SAS"</span>,
+    <span class="s">"adquiriente_nit"</span>: <span class="s">"800765432"</span>, <span class="s">"adquiriente_nombre"</span>: <span class="s">"Comprador SA"</span>,
+    <span class="s">"valor_base"</span>: 1_000_000, <span class="s">"valor_iva"</span>: 190_000, <span class="s">"valor_total"</span>: 1_190_000,
+    <span class="s">"fecha_emision"</span>: <span class="s">"2025-01-15"</span>, <span class="s">"fecha_vencimiento"</span>: <span class="s">"2025-02-15"</span>,
+})
+
+<span class="c"># 3. Habilitar como titulo valor</span>
+requests.put(<span class="s">f"{BASE}/api/v1/facturas/{'a1b2c3d4'*12}/habilitar-cesion"</span>, headers=hdrs)
+
+<span class="c"># 4. Ceder en RADIAN</span>
+<span class="e">cesion</span> = requests.post(<span class="s">f"{BASE}/api/v1/cesion/crear"</span>, headers=hdrs, json={
+    <span class="s">"cufe_factura"</span>: <span class="s">"a1b2c3d4"</span> * 12,
+    <span class="s">"cedente_nit"</span>: <span class="s">"900123456"</span>, <span class="s">"cedente_nombre"</span>: <span class="s">"Mi Empresa SAS"</span>,
+    <span class="s">"cesionario_nit"</span>: <span class="s">"860002153"</span>, <span class="s">"cesionario_nombre"</span>: <span class="s">"Banco de Bogota SA"</span>,
+    <span class="s">"valor_cesion"</span>: 1_190_000, <span class="s">"fecha_cesion"</span>: <span class="s">"2025-01-16"</span>,
+})
+print(cesion.json())  <span class="c"># {"cude": "...", "estado": "ACEPTADA"}</span></code></pre>
+      </div>
+    </div>
+    <!-- JavaScript -->
+    <div id="qs-js" class="tab-pane">
+      <div class="code-wrap">
+        <div class="code-bar"><span class="code-lang">javascript</span><button class="code-copy" onclick="copyCode(this)">Copiar</button></div>
+        <pre><code><span class="k">const</span> <span class="e">BASE</span> = <span class="s">'https://finpro-capital.vercel.app'</span>;
+
+<span class="c">// 1. Autenticar</span>
+<span class="k">const</span> { <span class="e">access_token</span> } = <span class="k">await</span> fetch(<span class="s">`${BASE}/api/v1/auth/token`</span>, {
+  method: <span class="s">'POST'</span>,
+  headers: { <span class="s">'Content-Type'</span>: <span class="s">'application/x-www-form-urlencoded'</span> },
+  body: <span class="s">'username=empresa@correo.com&password=tu_password'</span>,
+}).then(r => r.json());
+
+<span class="k">const</span> <span class="e">hdrs</span> = { <span class="s">'Authorization'</span>: <span class="s">`Bearer ${access_token}`</span>, <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span> };
+
+<span class="c">// 2. Registrar factura</span>
+<span class="k">await</span> fetch(<span class="s">`${BASE}/api/v1/facturas/registrar`</span>, {
+  method: <span class="s">'POST'</span>, headers: <span class="e">hdrs</span>,
+  body: JSON.stringify({
+    cufe: <span class="s">'a1b2c3d4'</span>.repeat(12),  <span class="c">// 96 chars hex del XML DIAN</span>
+    numero: <span class="s">'00001'</span>, prefijo: <span class="s">'FV'</span>,
+    emisor_nit: <span class="s">'900123456'</span>, emisor_nombre: <span class="s">'Mi Empresa SAS'</span>,
+    adquiriente_nit: <span class="s">'800765432'</span>, adquiriente_nombre: <span class="s">'Comprador SA'</span>,
+    valor_base: 1000000, valor_iva: 190000, valor_total: 1190000,
+    fecha_emision: <span class="s">'2025-01-15'</span>, fecha_vencimiento: <span class="s">'2025-02-15'</span>,
+  }),
+}).then(r => r.json()).then(console.log);
+
+<span class="c">// 3. Habilitar como titulo valor</span>
+<span class="k">await</span> fetch(<span class="s">`${BASE}/api/v1/facturas/${'a1b2c3d4'.repeat(12)}/habilitar-cesion`</span>,
+  { method: <span class="s">'PUT'</span>, headers: <span class="e">hdrs</span> });
+
+<span class="c">// 4. Ceder en RADIAN — Evento 037</span>
+<span class="k">const</span> <span class="e">cesion</span> = <span class="k">await</span> fetch(<span class="s">`${BASE}/api/v1/cesion/crear`</span>, {
+  method: <span class="s">'POST'</span>, headers: <span class="e">hdrs</span>,
+  body: JSON.stringify({
+    cufe_factura: <span class="s">'a1b2c3d4'</span>.repeat(12),
+    cedente_nit: <span class="s">'900123456'</span>, cedente_nombre: <span class="s">'Mi Empresa SAS'</span>,
+    cesionario_nit: <span class="s">'860002153'</span>, cesionario_nombre: <span class="s">'Banco de Bogota SA'</span>,
+    valor_cesion: 1190000, fecha_cesion: <span class="s">'2025-01-16'</span>,
+  }),
+}).then(r => r.json());
+
+console.log(cesion); <span class="c">// { cude: "...", estado: "ACEPTADA", xml_firmado: "..." }</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTH -->
+  <section class="sec" id="auth">
+    <div class="sec-title"><span class="sec-num">2</span> Autenticacion con Bearer Token</div>
+    <p class="sec-sub">La API usa JWT Bearer tokens. Todos los endpoints marcados con 🔒 requieren el header <span class="ic">Authorization: Bearer &lt;token&gt;</span>.</p>
+    <div class="auth-steps">
+      <div class="as">
+        <div class="as-num">1</div>
+        <div>
+          <div class="as-title">Obtener el token</div>
+          <div class="as-body">Llama a <span class="ic">POST /api/v1/auth/token</span> con <span class="ic">Content-Type: application/x-www-form-urlencoded</span> y los campos <span class="ic">username</span> (tu email) y <span class="ic">password</span>. Retorna <span class="ic">{"access_token": "eyJ...", "token_type": "bearer"}</span>. El token expira en 60 minutos.</div>
+        </div>
+      </div>
+      <div class="as">
+        <div class="as-num">2</div>
+        <div>
+          <div class="as-title">Usar en Swagger UI</div>
+          <div class="as-body">En <a href="/api/docs">Swagger UI</a>, haz clic en el boton <strong>Authorize 🔒</strong> (parte superior). En el campo <em>bearerAuth</em>, escribe el token con el prefijo <span class="ic">Bearer</span> — ejemplo: <span class="ic">Bearer eyJhbGciO...</span>. Todos los endpoints protegidos se autenticaran automaticamente.</div>
+        </div>
+      </div>
+      <div class="as">
+        <div class="as-num">3</div>
+        <div>
+          <div class="as-title">Renovacion automatica</div>
+          <div class="as-body">Ante un error <span class="ic">401 Unauthorized</span>, renueva el token llamando de nuevo a <span class="ic">POST /auth/token</span>. En integraciones de produccion almacena las credenciales en variables de entorno y reintenta automaticamente tras un 401.</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Ejemplo de header en todas las requests:</p>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="code-lang">http</span></div>
+        <pre><code><span class="e">Authorization</span><span class="p">:</span> <span class="s">Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlbXByZXNhQGNvcnJlby5jb20iLCJuaXQiOiI5MDAxMjM0NTYiLCJleHAiOjE3MDAwMDAwMDB9.firma</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONCEPTS -->
+  <section class="sec" id="concepts">
+    <div class="sec-title"><span class="sec-num">3</span> Conceptos clave</div>
+    <p class="sec-sub">Terminologia del ecosistema de facturacion electronica colombiana y RADIAN.</p>
+    <div class="concept-grid">
+      <div class="cc">
+        <div class="cc-tag">Identificador</div>
+        <div class="cc-title">CUFE — Codigo Unico de Factura Electronica</div>
+        <div class="cc-body">Cadena hexadecimal de <strong>96 caracteres</strong> que identifica una factura electronica ante la DIAN. Generado al emitir la factura, se encuentra en el campo <span class="cm">&lt;cbc:UUID&gt;</span> del XML o en el PDF de tu proveedor de facturacion. Es el identificador principal en toda la API. Ejemplo: <span class="cm">a1b2c3d4...</span> (96 chars hex).</div>
+      </div>
+      <div class="cc">
+        <div class="cc-tag">Identificador</div>
+        <div class="cc-title">CUDE — Codigo Unico de Documento Electronico</div>
+        <div class="cc-body">Equivalente al CUFE pero para <strong>eventos RADIAN</strong> (cesiones, endosos). Cada evento 037 genera un CUDE que identifica la cesion. La API retorna el CUDE junto con el XML firmado al crear una cesion exitosa. Sirve para rastrear el evento y descargar el XML.</div>
+      </div>
+      <div class="cc">
+        <div class="cc-tag">Plataforma DIAN</div>
+        <div class="cc-title">RADIAN — Registro de Facturas Electronicas</div>
+        <div class="cc-body">Plataforma del DIAN que registra eventos sobre facturas: endosos, cesiones, avales, pagos y protestos. Permite que una factura electronica funcione como <strong>titulo valor negociable</strong>. FinPro Capital se conecta via servicios web SOAP al ambiente de Habilitacion de RADIAN.</div>
+      </div>
+      <div class="cc">
+        <div class="cc-tag">Evento RADIAN</div>
+        <div class="cc-title">Evento 037 — Endoso en Propiedad</div>
+        <div class="cc-body">Transfiere el derecho de cobro de una factura a un nuevo titular (banco, fondo, factor). Requiere que la factura este habilitada como titulo valor (con eventos 032 y 033 previos). FinPro Capital envia el evento 037 firmado y recibe respuesta del DIAN en menos de 1 segundo.</div>
+      </div>
+      <div class="cc">
+        <div class="cc-tag">Prerequisito</div>
+        <div class="cc-title">Titulo Valor Electronico</div>
+        <div class="cc-body">Una factura se convierte en titulo valor cuando el adquiriente envio los <strong>eventos 032</strong> (acuse de recibo) y <strong>033</strong> (recibo de bienes/servicios). Activa este estado con <span class="cm">PUT /facturas/{cufe}/habilitar-cesion</span>. Solo facturas en este estado pueden cederse.</div>
+      </div>
+      <div class="cc">
+        <div class="cc-tag">NIT Colombia</div>
+        <div class="cc-title">NIT — Numero de Identificacion Tributaria</div>
+        <div class="cc-body">Identificador fiscal colombiano de personas juridicas. En la API se usa sin puntos ni guion: <span class="cm">900123456</span>. El digito de verificacion es opcional. Tanto cedente como cesionario deben identificarse con NIT valido en el cuerpo de cada request.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENVIRONMENTS -->
+  <section class="sec" id="envs">
+    <div class="sec-title"><span class="sec-num">4</span> Ambientes</div>
+    <p class="sec-sub">Configuracion para desarrollo y produccion.</p>
+    <table class="env-tbl">
+      <thead><tr><th>Ambiente</th><th>Base URL</th><th>DIAN</th><th>Estado</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Produccion</strong></td>
+          <td><span class="ec">https://finpro-capital.vercel.app</span></td>
+          <td>Habilitacion</td>
+          <td><span class="env-badge eb-prod">Activo</span></td>
+          <td style="font-size:12px;color:var(--text2)">Facturas reales. CUFEs del XML DIAN.</td>
+        </tr>
+        <tr>
+          <td><strong>Sandbox</strong></td>
+          <td><span class="ec" style="color:var(--muted)">Proximamente</span></td>
+          <td>Pruebas</td>
+          <td><span class="env-badge eb-sand">En desarrollo</span></td>
+          <td style="font-size:12px;color:var(--text2)">Datos sinteticos. CUFEs de prueba.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="notice"><strong>Nota:</strong> El ambiente actual conecta al <em>ambiente de Habilitacion</em> de RADIAN (pre-produccion DIAN). Los CUFEs deben corresponder a facturas reales registradas. El sandbox completo estara disponible en una version futura.</div>
+  </section>
+
+  <!-- RATE LIMITING -->
+  <section class="sec" id="rate-limiting">
+    <div class="sec-title"><span class="sec-num">5</span> Rate Limiting</div>
+    <p class="sec-sub">Limites aplicados por IP para proteger la plataforma.</p>
+    <table class="rl-tbl">
+      <thead><tr><th>Endpoint</th><th>Limite</th><th>Ventana</th><th>Error</th></tr></thead>
+      <tbody>
+        <tr><td><span class="ic">POST /api/v1/auth/token</span></td><td>5 intentos</td><td>60 segundos</td><td><span class="ic">429 Too Many Requests</span></td></tr>
+        <tr><td><span class="ic">POST /api/v1/auth/registro</span></td><td>10 intentos</td><td>5 minutos</td><td><span class="ic">429 Too Many Requests</span></td></tr>
+        <tr><td>Endpoints protegidos (requieren auth)</td><td>Sin limite</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:16px">
+      <div class="code-wrap">
+        <div class="code-bar"><span class="code-lang">http — respuesta 429</span></div>
+        <pre><code><span class="e">HTTP/1.1 429 Too Many Requests</span>
+<span class="k">Retry-After</span><span class="p">:</span> <span class="v">60</span>
+
+<span class="p">{</span> <span class="k">"detail"</span><span class="p">:</span> <span class="s">"Demasiados intentos de inicio de sesion. Espera 1 minuto."</span> <span class="p">}</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ERRORS -->
+  <section class="sec" id="errors">
+    <div class="sec-title"><span class="sec-num">6</span> Codigos de error</div>
+    <p class="sec-sub">Todos los errores retornan <span class="ic">{"detail": "descripcion"}</span> en el cuerpo.</p>
+    <div class="err-grid">
+      <div class="err-card"><div class="err-code e4xx">400</div><div><div class="err-title">Bad Request</div><div class="err-desc">Datos invalidos o duplicados. Ej: email ya registrado, CUFE duplicado, NIT con formato incorrecto.</div></div></div>
+      <div class="err-card"><div class="err-code e4xx">401</div><div><div class="err-title">Unauthorized</div><div class="err-desc">Token JWT ausente, expirado o invalido. Renueva con POST /auth/token y reintenta.</div></div></div>
+      <div class="err-card"><div class="err-code e4xx">403</div><div><div class="err-title">Forbidden</div><div class="err-desc">CSRF token invalido (sesiones por cookie). Clientes con Bearer token no reciben este error.</div></div></div>
+      <div class="err-card"><div class="err-code e4xx">404</div><div><div class="err-title">Not Found</div><div class="err-desc">Factura o cesion no encontrada para el CUFE/CUDE dado, o el recurso pertenece a otro usuario.</div></div></div>
+      <div class="err-card"><div class="err-code e4xx">422</div><div><div class="err-title">Unprocessable Entity</div><div class="err-desc">Validacion de schema fallida. El cuerpo lista los campos invalidos. Revisa tipos y campos requeridos.</div></div></div>
+      <div class="err-card"><div class="err-code e4xx">429</div><div><div class="err-title">Too Many Requests</div><div class="err-desc">Rate limit superado. Espera el tiempo del header <span class="ic">Retry-After</span> antes de reintentar.</div></div></div>
+      <div class="err-card"><div class="err-code e5xx">500</div><div><div class="err-title">Internal Server Error</div><div class="err-desc">Error inesperado. Si persiste, contacta soporte con el timestamp de la request.</div></div></div>
+      <div class="err-card"><div class="err-code e5xx">502</div><div><div class="err-title">DIAN No Disponible</div><div class="err-desc">Servicio SOAP DIAN no respondio. El sistema reintenta con backoff exponencial automaticamente.</div></div></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div>&copy; 2025 FinPro Capital SAS &mdash; Todos los derechos reservados</div>
+  <div style="margin-top:8px">
+    <a href="/">Inicio</a> &nbsp;&middot;&nbsp;
+    <a href="/api/docs">Swagger UI</a> &nbsp;&middot;&nbsp;
+    <a href="/api/redoc">ReDoc</a> &nbsp;&middot;&nbsp;
+    <a href="/api/openapi.json">OpenAPI JSON</a> &nbsp;&middot;&nbsp;
+    <a href="/app">Plataforma</a>
+  </div>
+</footer>
+
+<script>
+function switchTab(group, name, btn) {
+  document.querySelectorAll('[id^="'+group+'-"]').forEach(p => p.classList.remove('active'));
+  document.getElementById(group+'-'+name).classList.add('active');
+  btn.closest('.tab-head').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function copyCode(btn) {
+  const text = btn.closest('.code-wrap').querySelector('pre').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copiado';
+    setTimeout(() => btn.textContent = 'Copiar', 2200);
+  }).catch(() => { btn.textContent = 'Error'; setTimeout(() => btn.textContent = 'Copiar', 2000); });
+}
+</script>
+</body>
+</html>"""
+
 @app.get("/", include_in_schema=False)
 async def landing():
     return HTMLResponse(LANDING)
@@ -3366,6 +4462,34 @@ async def landing():
 @app.get("/app", include_in_schema=False)
 async def app_ui():
     return HTMLResponse(UI)
+
+@app.get("/developers", include_in_schema=False)
+async def developers_page():
+    return HTMLResponse(DEVELOPERS_PAGE)
+
+@app.get("/api/openapi.json", include_in_schema=False)
+async def openapi_json():
+    return JSONResponse(app.openapi())
+
+@app.get("/api/docs", include_in_schema=False)
+async def swagger_ui():
+    return get_swagger_ui_html(
+        openapi_url="/api/openapi.json",
+        title="FinPro Capital — Swagger UI",
+        swagger_ui_parameters={
+            "persistAuthorization": True,
+            "displayRequestDuration": True,
+            "filter": True,
+            "tryItOutEnabled": True,
+        },
+    )
+
+@app.get("/api/redoc", include_in_schema=False)
+async def redoc_ui():
+    return get_redoc_html(
+        openapi_url="/api/openapi.json",
+        title="FinPro Capital — ReDoc",
+    )
 
 @app.get("/health", tags=["Health"])
 async def health():

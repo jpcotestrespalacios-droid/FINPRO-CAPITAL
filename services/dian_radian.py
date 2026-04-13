@@ -3,12 +3,16 @@ Servicio DIAN RADIAN - Firma XML y envío de eventos de cesión
 """
 import base64
 import hashlib
+import logging
 from datetime import datetime
 import zeep
+from zeep.transports import Transport
 from lxml import etree
 from signxml import XMLSigner, methods
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.backends import default_backend
+
+logger = logging.getLogger(__name__)
 
 from config import settings
 
@@ -47,7 +51,7 @@ class DianRadianService:
         Genera el CUDE (Código Único Documento Electrónico) para el evento de cesión.
         Fórmula DIAN: SHA-384 de la concatenación de campos
         """
-        cadena = f"{numero_cesion}{fecha}{str(valor)}{cedente_nit}{cesionario_nit}{cufe_factura}{self.ambiente}{settings.CLAVE_TECNICA_DIAN}"
+        cadena = f"{numero_cesion}{fecha}{valor:.2f}{cedente_nit}{cesionario_nit}{cufe_factura}{self.ambiente}{settings.CLAVE_TECNICA_DIAN}"
         cude = hashlib.sha384(cadena.encode()).hexdigest()
         return cude
 
@@ -230,8 +234,9 @@ class DianRadianService:
             # Codificar XML en base64
             xml_b64 = base64.b64encode(xml_firmado.encode()).decode()
 
-            # Conectar al webservice SOAP de la DIAN
-            client = zeep.Client(wsdl=settings.DIAN_WS_RADIAN_WSDL)
+            # Conectar al webservice SOAP de la DIAN (timeout 30s)
+            transport = Transport(timeout=30, operation_timeout=30)
+            client = zeep.Client(wsdl=settings.DIAN_WS_RADIAN_WSDL, transport=transport)
 
             # Llamar al método de envío
             response = client.service.SendEventUpdateStatus(
@@ -247,6 +252,7 @@ class DianRadianService:
             }
 
         except Exception as e:
+            logger.error("Error enviando evento RADIAN: %s", e)
             return {
                 "exitoso": False,
                 "error": str(e),
@@ -256,7 +262,8 @@ class DianRadianService:
     def consultar_estado_evento(self, cude: str) -> dict:
         """Consulta el estado de un evento en RADIAN por su CUDE"""
         try:
-            client = zeep.Client(wsdl=settings.DIAN_WS_RADIAN_WSDL)
+            transport = Transport(timeout=30, operation_timeout=30)
+            client = zeep.Client(wsdl=settings.DIAN_WS_RADIAN_WSDL, transport=transport)
             response = client.service.GetStatusEvent(trackId=cude)
             return {
                 "exitoso": True,
